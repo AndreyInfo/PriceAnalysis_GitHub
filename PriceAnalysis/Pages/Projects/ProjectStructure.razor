@@ -1,0 +1,28 @@
+﻿@page "/project-structure/{ProjectId:guid}"
+
+@using PriceAnalysis.Shared.Menu
+
+<PageTitle>Состав проекта</PageTitle>
+
+<div class="app-main">
+
+    <!-- Menu -->
+    <NavMenu ViewMenu="true" ProjectId="@ProjectId.ToString()" />
+
+    <div class="app-main__outer col-12">
+        <div class="app-main__inner">
+            <ProjectPassportMain ProjectId="@ProjectId" />
+
+            <div class="priceAnalysisMainHead">
+                <h3>Состав проекта</h3>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public Guid ProjectId { get; set; }
+}
+
+

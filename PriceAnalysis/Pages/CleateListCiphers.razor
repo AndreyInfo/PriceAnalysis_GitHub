@@ -1,0 +1,766 @@
+﻿@page "/cleate-list-ciphers/{ProjectId:guid}/{Step:int?}/{SectionId:int?}"
+
+@using PriceAnalysis.Shared.Menu
+@using PriceAnalysis.BLL.Services
+@using PriceAnalysis.Models
+@using PriceAnalysis.BLL.Models
+@using AutoMapper
+@using PriceAnalysis.Shared.InfoModals
+@using PriceAnalysis.BLL.Services.Support
+
+@inject ISectionService _sectionService;
+@inject DialogService _dialogService;
+@inject IMapper _mapper;
+@inject NavigationManager _navigationManager;
+@inject ILoadDataFileService _loadDataFileService;
+@inject NotificationService _notificationService;
+@inject ISpecificationService _specificationService;
+@inject IAlertService _alertService;
+
+<PageTitle>Создание списка шифров</PageTitle>
+
+<div class="app-main">
+
+    <!-- Menu -->
+    <NavMenu ViewMenu="true" ProjectId="@ProjectId.ToString()" />
+
+    <div class="app-main__outer col-12">
+        <div class="app-main__inner">
+            <ProjectPassportMain ProjectId="@ProjectId" />
+
+            <div class="priceAnalysisMainHead">
+                <h3>Коньюктурный анализ цен (КАЦ)</h3>
+            </div>
+            <div class="createListCiphers">
+                
+                <div class="row menuSteps">
+                    <div class="">
+                        <button @onclick="@GoStep0" class="btn btnStep @btnStep0Class">Шаг 0</button>
+                        <button @onclick="@GoStep1" class="btn btnStep @btnStep1Class">Шаг 1</button>
+                        <button @onclick="@(() => GoStep2(null))" class="btn btnStep @btnStep2Class">Шаг 2</button>
+                        <button @onclick="@GoStep3" class="btn btnStep @btnStep3Class">Шаг 3</button>
+                        <button @onclick="@Exit" class="btn btn-secondary btnStep">Выход из подготовки КАЦ</button>
+                    </div>
+                </div>
+
+                <div class="row priceAnalysisMainHeadStep">
+                    <p class="col-md-5"> @nameStep </p>
+                </div>
+
+                @if (showBlockStep1)
+                {
+                    <div class="row priceAnalysisMainBtns">
+                        <div class="col-md-4">
+                            <button @onclick="@InitSelectCiphersInfoModal" type="button" class="btn btn-secondary">
+                                Выбор шифров для КАЦ из состава проекта
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <button @onclick="@GoStep1" type="button" class="btn btn-primary">
+                                Создание списка шифров для КАЦ
+                            </button>
+                        </div>
+                    </div>
+                }
+
+                @if (showBlockSection)
+                {
+                    <div class="row priceAnalysisBlockCreateList">Создание списка шифров для КАЦ</div>
+                    <div class="row">
+                        <div class="main-card mb-3 card">
+                            <div class="card-body">
+                                <div>
+                                    <span class="cipherHead">Разделы:</span>
+                                    <span>
+                                        <i @onclick="InitCreateCipherModal" class="bi bi-plus-square btnAdd"> </i>
+                                        @if (currentPageState != PageStates.step1_without_sections)
+                                        {
+                                            <i @onclick="InitUpdateCipherModal" class="bi bi-pencil-square btnEdit"> </i>
+                                            <i @onclick="InitDeleteCipherModal" class="bi bi-x-square btnDelete"> </i>
+                                        }
+                                    </span>
+                                </div>
+                                <div class="ciphers">
+                                    @foreach (var item in sections)
+                                    {
+                                        <button @onclick="@(() => ChangeSection(item.Id))" class="cipher @item.CreateListCiphersClass">@item.Name</button>
+                                        if (sections.Count > 5 && !showSections)
+                                        {
+                                            <button @onclick="ShowSection" class="showSection">&gt;&gt; Показать разделы</button>
+                                            break;
+                                        }
+                                    }
+                                    @if (sections.Count > 5 && showSections)
+                                    {
+                                        <button @onclick="HideSection" class="showSection">&lt;&lt; Скрыть разделы</button>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                @if (showBlockSpecification)
+                {
+                    <div class="row">
+                        <div class="main-card mb-3 card">
+                            <div class="card-body">
+                                <div>
+                                    <p>Спецификация <b>@currentSection.Name</b></p>
+                                </div>
+
+                                <div class="BtnsSelectSpecifications">
+                                    <span class="badge bg-info text-dark">Выбрано @countCheckedItem элементов.</span>
+                                    <button @onclick="InitSelectByManufacturerModal" class="btn btn-sm btn-secondary">
+                                        Подбор спецификации по производителю
+                                    </button>
+                                    @*<button @onclick="DownLoadRequestKP" class="btn btn-sm btn-secondary @btnDownLoadRequestKPDisabled">
+                                        Скачать запрос КП
+                                    </button>*@
+                                    <button @onclick="InitCreateRequestKPModal" class="btn btn-sm btn-secondary @btnDownLoadRequestKPDisabled">
+                                        Создать запрос КП
+                                    </button>
+
+                                </div>
+
+                                <div>
+                                    <RadzenDataGrid AllowSorting="true" Data="@specifications" TItem="SpecificationViewModel" Style="width: auto;" 
+                                    AllowColumnResize="true" PageSize="10" AllowPaging="true">
+                                        <Columns>
+                                            <RadzenDataGridColumn TItem="SpecificationViewModel" Width="50px" TextAlign="TextAlign.Center" Sortable="false">
+                                                <HeaderTemplate>
+                                                    <RadzenCheckBox TriState="false" TValue="bool" Value="@inputCheckboxClickedAll"
+                                                                Change="@(args => { SelectAllItems(args); })" />
+                                                </HeaderTemplate>
+                                                <Template Context="data">
+                                                    @{string classItem = "";}
+                                                    @if (data.IsSelectedItem)
+                                                    {
+                                                        classItem = " BackgroundColorOrange";
+                                                    }
+
+                                                    <div class="@classItem">
+                                                        <RadzenCheckBox TriState="false" Value="@data.IsSelectedItem"
+                                                                    TValue="bool" Change="@(args => { SelectItem(args, data); })" />
+                                                    </div>
+                                                </Template>
+                                            </RadzenDataGridColumn>
+
+                                            <RadzenDataGridColumn TItem="SpecificationViewModel" Property="SID" Title="СИД" Width="70px" TextAlign="TextAlign.Center" />
+
+                                            <RadzenDataGridColumn TItem="SpecificationViewModel" Property="Name" Width="250px" TextAlign="TextAlign.Left">
+                                                <HeaderTemplate>
+                                                    <span>Наименование</span>
+                                                </HeaderTemplate>
+                                            </RadzenDataGridColumn>
+
+                                            <RadzenDataGridColumn TItem="SpecificationViewModel" Property="Type" Width="80px" TextAlign="TextAlign.Left">
+                                                <HeaderTemplate>
+                                                    <span>Тип/Марка</span>
+                                                </HeaderTemplate>
+                                            </RadzenDataGridColumn>
+
+                                            <RadzenDataGridColumn TItem="SpecificationViewModel" Property="Code" Width="80px" TextAlign="TextAlign.Left">
+                                                <HeaderTemplate>
+                                                    <span>Код <br>продукции</span>
+                                                </HeaderTemplate>
+                                            </RadzenDataGridColumn>
+
+                                            <RadzenDataGridColumn TItem="SpecificationViewModel" Property="Manufacturer" Width="120px" TextAlign="TextAlign.Left">
+                                                <HeaderTemplate>
+                                                    <span>Производитель</span>
+                                                </HeaderTemplate>
+                                            </RadzenDataGridColumn>
+
+                                            <RadzenDataGridColumn TItem="SpecificationViewModel" Property="UnitOfMeasurement.Name" Width="50px" TextAlign="TextAlign.Left">
+                                                <HeaderTemplate>
+                                                    <span>Ед. <br> изм.</span>
+                                                </HeaderTemplate>
+                                            </RadzenDataGridColumn>
+
+                                            <RadzenDataGridColumn TItem="SpecificationViewModel" Property="Count" Width="50px" TextAlign="TextAlign.Left">
+                                                <HeaderTemplate>
+                                                    <span>Кол-во</span>
+                                                </HeaderTemplate>
+                                            </RadzenDataGridColumn>
+
+                                        </Columns>
+                                    </RadzenDataGrid>
+                                </div>
+                                
+                                <div>
+                                    <br />
+                                    <h6 class="card-title">Загрузка спецификации из файла</h6>
+
+                                    <button @onclick="DownLoadTemplate" type="button" class="btn btn-sm btn-secondary">Скачать шаблон для загрузки</button>
+                                    <button @onclick="InitLoadHelpModal" type="button" class="btn btn-sm btn-secondary">Справка</button>
+
+                                    <BlazorInputFile.InputFile OnChange="@(files => SaveFileForLoadSpecification(files))" MaxBufferSize="6000000" class="btn btn-primary btn-sm btnLoadSpecificationFromExcel" />
+
+                                    @if (isViewBtnLoad)
+                                    {
+                                        <button @onclick="LoadSpecification" type="button" class="btn btn-sm mr-2 btn-primary ">Загрузить</button>
+                                        <span>@NameSaveFileForLoadSpecification</span>
+                                    }
+                                    <br \>
+                                    <br \>
+                                    @if (specifications.Count > 0)
+                                    {
+                                        <button @onclick="DownLoadSpecification" type="button" class="btn btn-sm btn-primary" style="margin: 0 10px;">Скачать спецификацию</button>
+                                    }
+
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                @if (showBlockStep3)
+                {
+                    <div class="row">
+                        <div class="main-card mb-3 card">
+                            <div class="card-body">
+                                <div>
+                                    <button @onclick="@GoOption1" type="button" class="btn btn-sm btn-primary">
+                                        Вариант 1 Загрузка таблиц КАЦ и КП
+                                    </button>
+                                    <button @onclick="@GoOption2" type="button" class="btn btn-sm btn-primary">
+                                        Вариант 2 Загрузка КП Создание КАЦ
+                                    </button>
+                                    <button @onclick="@Exit" type="button" class="btn btn-sm btn-secondary">
+                                        Вариант 3 Подготовка КАЦ и КП автоматически
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public Guid ProjectId { get; set; }
+    [Parameter] public int? SectionId { get; set; }
+    [Parameter] public int? Step { get; set; }
+
+    protected override void OnInitialized()
+    {
+        sections = _mapper.Map<List<SectionViewModel>>(_sectionService.GetList()
+            .Where(x => x.ProjectId == ProjectId)).OrderBy(x => x.Id).ToList();
+
+        specifications = GetSpecification(SectionId);
+
+        if (SectionId is null)
+        {
+            SetPageState(PageStates.step0);
+        }
+        else
+        {
+            GoStep2(SectionId);
+        }
+
+        if (Step is not null)
+        {
+            switch (Step)
+            {
+                case 0:
+                    GoStep0();
+                    break;
+                case 1:
+                    GoStep1();
+                    break;
+                case 2:
+                    if (SectionId is null)
+                    {
+                        GoStep2();
+                    }
+                    else
+                    {
+                        GoStep2(SectionId);
+                    }
+                    break;
+                case 3:
+                    GoStep3();
+                    break;
+            }
+        }
+        else
+        {
+            SetPageState(PageStates.step0);
+        }
+
+    }
+
+    List<SectionViewModel> sections;
+    List<SpecificationViewModel> specifications;
+    SectionViewModel currentSection;
+    //string specificationTable;
+    string nameStep;
+    string btnStep0Class = " btn-primary";
+    string btnStep1Class = " btn-secondary";
+    string btnStep2Class = " btn-secondary";
+    string btnStep3Class = " btn-secondary";
+
+    bool showBlockStep1 = true;
+    bool showSections = false;
+    bool isViewBtnLoad = false;
+    bool showBlockSpecification = false;
+    bool showBlockSection = false;
+    bool showBlockStep3 = false;
+    string guidSaveFileForLoadSpecification = "";
+    string TypeSaveFileForLoadSpecification = "";
+    string NameSaveFileForLoadSpecification = "";
+    string nameStep0 = "Шаг 0. Выбор шифров для КАЦ из состава проекта";
+    string nameStep1 = "Шаг 1. Выбор шифров для подготовки КАЦ";
+    string nameStep2 = "Шаг 2. Загрузка спецификаций шифров для КАЦ";
+    string nameStep3 = "Шаг 3. Выбор способа подготовки КАЦ";
+
+    int countCheckedItem = 0;
+    bool inputCheckboxClickedAll = false;
+    string btnDownLoadRequestKPDisabled = "disabled";
+
+    enum PageStates { step0, step1_without_sections, step1, step2, step3 };
+    PageStates currentPageState;
+
+    void Exit()
+    {
+        _navigationManager.NavigateTo("project-passport/" + ProjectId, true);
+    }
+
+    void GoStep0()
+    {
+        SetPageState(PageStates.step0);
+    }
+
+    void GoStep1()
+    {
+        sections = _mapper.Map<List<SectionViewModel>>(_sectionService.GetList()
+            .Where(x => x.ProjectId == ProjectId)).OrderBy(x => x.Id).ToList();
+
+        if (sections.Count != 0)
+        {
+            currentSection = sections[0];
+            currentSection.CreateListCiphersClass = "activeCipher";
+            SetPageState(PageStates.step1);
+        }
+        else
+        {
+            SetPageState(PageStates.step1_without_sections);
+        }
+    }
+
+    void GoStep2(int? sectionId = null)
+    {
+        sections = _mapper.Map<List<SectionViewModel>>(_sectionService.GetList()
+            .Where(x => x.ProjectId == ProjectId)).OrderBy(x => x.Id).ToList();
+
+        if (sections.Count != 0)
+        {
+            if (sectionId is null)
+            {
+                currentSection = sections[0];
+            }
+            else
+            {
+                currentSection = sections.FirstOrDefault(x => x.Id == sectionId);
+                if (sections.Count > 5)
+                {
+                    showSections = true;
+                }
+            }
+            
+            //currentSection = sections[0];
+            currentSection.CreateListCiphersClass = "activeCipher";
+            //LoadTableFromFile();
+            specifications = GetSpecification(currentSection.Id);
+            SetPageState(PageStates.step2);
+        }
+        else
+        {
+            _notificationService.Notify(new NotificationMessage{
+                    Severity = NotificationSeverity.Warning, 
+                    Summary = "Переход на Шаг 2 невозможен!",
+                    Detail = "Проверьте наличие разделов."
+                    });
+        }
+    }
+
+    void GoStep3()
+    {
+        sections = _mapper.Map<List<SectionViewModel>>(_sectionService.GetList()
+            .Where(x => x.ProjectId == ProjectId)).OrderBy(x => x.Id).ToList();
+
+        if (sections.Count != 0)
+        {
+            SetPageState(PageStates.step3);
+        }
+        else
+        {
+            _notificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Переход на Шаг 3 невозможен!",
+                    Detail = "Проверьте наличие разделов."
+                });
+        }
+    }
+
+    void GoOption1()
+    {
+        _navigationManager.NavigateTo("option-1/" + ProjectId, true);
+    }
+
+    void GoOption2()
+    {
+        _navigationManager.NavigateTo("option-2/" + ProjectId, true);
+    }
+
+    void SetPageState(PageStates state)
+    {
+        currentPageState = state;
+
+        @switch (currentPageState)
+        {
+            case PageStates.step0:
+                nameStep = nameStep0;
+                showBlockStep1 = true;
+                showBlockSpecification = false;
+                showBlockSection = false;
+                showBlockStep3 = false;
+
+                btnStep0Class = " btn-primary";
+                btnStep1Class = " btn-secondary";
+                btnStep2Class = " btn-secondary";
+                btnStep3Class = " btn-secondary";
+
+                break;
+            case PageStates.step1:
+                nameStep = nameStep1;
+                showBlockStep1 = false;
+                showBlockSection = true;
+                showBlockSpecification = false;
+                showBlockStep3 = false;
+
+                btnStep0Class = " btn-secondary";
+                btnStep1Class = " btn-primary";
+                btnStep2Class = " btn-secondary";
+                btnStep3Class = " btn-secondary";
+
+                break;
+            case PageStates.step1_without_sections:
+                nameStep = nameStep1;
+                showBlockStep1 = false;
+                showBlockSection = true;
+                showBlockSpecification = false;
+                showBlockStep3 = false;
+
+                btnStep0Class = " btn-secondary";
+                btnStep1Class = " btn-primary";
+                btnStep2Class = " btn-secondary";
+                btnStep3Class = " btn-secondary";
+
+                break;
+            case PageStates.step2:
+                nameStep = nameStep2;
+                showBlockStep1 = false;
+                showBlockSection = true;
+                showBlockSpecification = true;
+                showBlockStep3 = false;
+
+                btnStep0Class = " btn-secondary";
+                btnStep1Class = " btn-secondary";
+                btnStep2Class = " btn-primary";
+                btnStep3Class = " btn-secondary";
+
+                break;
+            case PageStates.step3:
+                nameStep = nameStep3;
+                showBlockStep1 = false;
+                showBlockSection = false;
+                showBlockSpecification = false;
+                showBlockStep3 = true;
+
+                btnStep0Class = " btn-secondary";
+                btnStep1Class = " btn-secondary";
+                btnStep2Class = " btn-secondary";
+                btnStep3Class = " btn-primary";
+
+                break;
+        }
+    }
+
+    public void RefreshData()
+    {
+        sections = _mapper.Map<List<SectionViewModel>>(_sectionService.GetList()
+        .Where(x => x.ProjectId == ProjectId)).OrderBy(x => x.Id).ToList();
+        if (sections.Count != 0)
+        {
+            currentSection = sections[0];
+            currentSection.CreateListCiphersClass = "activeCipher";
+            showSections = false;
+        }
+
+        if (sections.Count == 0)
+        {
+            currentPageState = PageStates.step1_without_sections;
+        }
+        else
+        {
+            currentPageState = PageStates.step1;
+        }
+        RefreshSelectItemsRequestKP();
+    }
+
+    public void RefreshSelectItemsRequestKP()
+    {
+        countCheckedItem = 0;
+        inputCheckboxClickedAll = false;
+        btnDownLoadRequestKPDisabled = "disabled";
+        foreach (var item in specifications)
+        {
+            item.IsSelectedItem = false;
+        }
+    }
+
+    public void RefreshAfterCreateCipher()
+    {
+        sections = _mapper.Map<List<SectionViewModel>>(_sectionService.GetList()
+            .Where(x => x.ProjectId == ProjectId)).OrderBy(x => x.Id).ToList();
+
+        currentSection = sections[sections.Count - 1];
+        currentSection.CreateListCiphersClass = "activeCipher";
+        showSections = true;
+        currentPageState = PageStates.step1;
+
+        //LoadTableFromFile();
+        specifications = GetSpecification(currentSection.Id);
+        countCheckedItem = 0;
+        inputCheckboxClickedAll = false;
+        RefreshBlockLoad();
+    }
+
+    public void RefreshAfterUpdateCipher(int id)
+    {
+        sections = _mapper.Map<List<SectionViewModel>>(_sectionService.GetList()
+        .Where(x => x.ProjectId == ProjectId)).OrderBy(x => x.Id).ToList();
+
+        currentSection = sections.FirstOrDefault(x => x.Id == id);
+        currentSection.CreateListCiphersClass = "activeCipher";
+    }
+
+    void ChangeSection(int Id)
+    {
+        currentSection.CreateListCiphersClass = "";
+        currentSection = sections.Where(x => x.Id == Id).First();
+        currentSection.CreateListCiphersClass = "activeCipher";
+
+        specifications = GetSpecification(currentSection.Id);
+
+        RefreshBlockLoad();
+    }
+
+    void RefreshBlockLoad()
+    {
+        guidSaveFileForLoadSpecification = "";
+        NameSaveFileForLoadSpecification = "";
+        TypeSaveFileForLoadSpecification = "";
+        isViewBtnLoad = false;
+        countCheckedItem = 0;
+        inputCheckboxClickedAll = false;
+        btnDownLoadRequestKPDisabled = "disabled";
+    }
+
+    void ShowSection()
+    {
+        showSections = !showSections;
+    }
+
+    void HideSection()
+    {
+        RefreshData();
+    }
+
+    async Task InitSelectCiphersInfoModal()
+    {
+        var result = await _dialogService.OpenAsync("Инфо!", ds =>
+        @<SelectCiphersInfoModal />, new DialogOptions { Height = "auto" });
+    }
+
+    async Task InitCreateCipherModal()
+    {
+        var result = await _dialogService.OpenAsync("Создание нового раздела!", ds =>
+        @<CreateCipherModal ProjectId="ProjectId" RefreshDataCallback="RefreshAfterCreateCipher" />, new DialogOptions { Height = "auto" });
+    }
+
+    async Task InitUpdateCipherModal()
+    {
+        var result = await _dialogService.OpenAsync("Изменение раздела!", ds =>
+        @<UpdateCipherModal Section="currentSection" RefreshDataCallback="RefreshAfterUpdateCipher" />, new DialogOptions { Height = "auto" });
+    }
+
+    async Task InitDeleteCipherModal()
+    {
+        var result = await _dialogService.OpenAsync("Удаление раздела!", ds =>
+        @<DeleteCipherModal Section="currentSection" RefreshDataCallback="RefreshData" />, new DialogOptions { Height = "auto" });
+    }
+
+    private void DownLoadTemplate()
+    {
+        string path = @"TemplatesExcel/" + "TemplateDataSpecificationForLoad.xlsx";
+        _navigationManager.NavigateTo(path, true);
+    }
+
+    private async Task InitLoadHelpModal()
+    {
+        var result = await _dialogService.OpenAsync("Справка по загрузке спецификации из файла!", ds =>
+        @<HelpForLoadSpecificationDataFromFileTemplateModal />, new DialogOptions { Height = "auto", Width = "800px" });
+    }
+
+    private void SaveFileForLoadSpecification(IFileListEntry[] files)
+    {
+        IFileListEntry file = files.FirstOrDefault();
+
+        var res = _loadDataFileService.SaveFileForLoadSpecification(file);
+
+        if (res.Severity == NotificationSeverity.Success)
+        {
+            guidSaveFileForLoadSpecification = res.Detail;
+            NameSaveFileForLoadSpecification = file.Name;
+            TypeSaveFileForLoadSpecification = file.Type;
+            isViewBtnLoad = true;
+        }
+        if (res.Severity == NotificationSeverity.Error)
+        {
+            _notificationService.Notify(res);
+        }
+    }
+
+    private void LoadSpecification()
+    {
+        var res = _specificationService.CreateDataSpecification(guidSaveFileForLoadSpecification, currentSection.Id, NameSaveFileForLoadSpecification);
+
+        _notificationService.Notify(res.Item1);
+        if (res.Item1.Severity == NotificationSeverity.Success)
+        {
+            RefreshBlockLoad();
+            specifications = GetSpecification(currentSection.Id);
+        }
+    }
+
+    private List<SpecificationViewModel> GetSpecification(int? sectionId)
+    {
+        if (sectionId is not null)
+        {
+            return _mapper.Map<List<SpecificationViewModel>>(_specificationService.GetList()
+            .Where(x => x.SectionId == sectionId)).OrderBy(x => x.Id).ToList();
+        }
+        else
+        {
+            return null;
+        }
+        
+    }
+
+    private void DownLoadSpecification()
+    {
+        var res = _specificationService.DownloadFileSpecifications(currentSection.Id);
+
+
+        if (res.Item1.Severity == NotificationSeverity.Success)
+        {
+            _navigationManager.NavigateTo(res.Item2, true);
+        }
+        else
+        {
+            _notificationService.Notify(res.Item1);
+            return;
+        }
+    }
+
+    void SelectItem(object checkedValue, SpecificationViewModel data)
+    {
+        if ((bool)checkedValue)
+        {
+            countCheckedItem++;
+        }
+        else
+        {
+            countCheckedItem--;
+            if (countCheckedItem == 0)
+            {
+                inputCheckboxClickedAll = false;
+            }
+        }
+        specifications.Find(x => x.Id == data.Id).IsSelectedItem = (bool)checkedValue;
+        btnDownLoadRequestKPDisabled = countCheckedItem == 0 ? "disabled" : "";
+    }
+
+    public void SelectAllItems(object checkedValue)
+    {
+        if ((bool)checkedValue)
+        {
+            foreach (var item in specifications)
+            {
+                item.IsSelectedItem = true;
+            }
+            countCheckedItem = specifications.Count();
+            inputCheckboxClickedAll = true;
+        }
+        else
+        {
+            foreach (var item in specifications)
+            {
+                item.IsSelectedItem = false;
+            }
+            countCheckedItem = 0;
+            inputCheckboxClickedAll = false;
+        }
+        btnDownLoadRequestKPDisabled = countCheckedItem == 0 ? "disabled" : "";
+    }
+
+    async Task InitSelectByManufacturerModal()
+    {
+        var result = await _dialogService.OpenAsync("Выборка по производителю!", ds =>
+        @<SelectByManufacturerModal SectionId="currentSection.Id" RefreshDataCallback="SelectItemsByManufacturer" />, new DialogOptions { Height = "auto" });
+    }
+
+    public void SelectItemsByManufacturer(List<string> manufacturerList)
+    {
+        foreach (var item in specifications)
+        {
+            if ( manufacturerList.Any(x => x.ToLower() == item.Manufacturer.ToLower()) )
+            {
+                item.IsSelectedItem = true;
+                countCheckedItem++;
+            }
+        }
+        btnDownLoadRequestKPDisabled = countCheckedItem == 0 ? "disabled" : "";
+    }
+
+    //public void DownLoadRequestKP()
+    //{
+    //    var res = _loadDataFileService.DownloadFileRequestKP(_mapper.Map<List<SpecificationDto>>(specifications));
+        
+    //    if (res is not null)
+    //    {
+    //        RefreshSelectItemsRequestKP();
+    //        _navigationManager.NavigateTo(res, true);
+    //    }
+    //    else
+    //    {
+    //        _notificationService.Notify(_alertService.Get(54));
+    //        return;
+    //    }
+    //}
+
+    async Task InitCreateRequestKPModal()
+    {
+        await _dialogService.OpenAsync("Сформировать запрос КП поставщику!", ds =>
+        @<CreateRequestKPModal Specifications="specifications" RefreshDataCallback="RefreshSelectItemsRequestKP" />, new DialogOptions { Height = "auto" });
+    }
+}

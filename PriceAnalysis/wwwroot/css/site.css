@@ -1,0 +1,194 @@
+@import url('open-iconic/font/css/open-iconic-bootstrap.min.css');
+
+html, body {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+body {
+    background-color: #F1F4F6 !important;
+}
+
+h1:focus {
+    outline: none;
+}
+
+a {text-decoration: none;}
+
+a, .btn-link {
+    color: #0071c1;
+}
+
+.btn-primary {
+    color: #fff;
+    background-color: #1b6ec2;
+    border-color: #1861ac;
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+.content {
+    padding-top: 1.1rem;
+}
+
+.valid.modified:not([type=checkbox]) {
+    outline: 1px solid #26b050;
+}
+
+.invalid {
+    outline: 1px solid red;
+}
+
+.validation-message {
+    color: red;
+}
+
+#blazor-error-ui {
+    background: lightyellow;
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+
+    #blazor-error-ui .dismiss {
+        cursor: pointer;
+        position: absolute;
+        right: 0.75rem;
+        top: 0.5rem;
+    }
+
+.blazor-error-boundary {
+    background: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTYiIGhlaWdodD0iNDkiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIG92ZXJmbG93PSJoaWRkZW4iPjxkZWZzPjxjbGlwUGF0aCBpZD0iY2xpcDAiPjxyZWN0IHg9IjIzNSIgeT0iNTEiIHdpZHRoPSI1NiIgaGVpZ2h0PSI0OSIvPjwvY2xpcFBhdGg+PC9kZWZzPjxnIGNsaXAtcGF0aD0idXJsKCNjbGlwMCkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0yMzUgLTUxKSI+PHBhdGggZD0iTTI2My41MDYgNTFDMjY0LjcxNyA1MSAyNjUuODEzIDUxLjQ4MzcgMjY2LjYwNiA1Mi4yNjU4TDI2Ny4wNTIgNTIuNzk4NyAyNjcuNTM5IDUzLjYyODMgMjkwLjE4NSA5Mi4xODMxIDI5MC41NDUgOTIuNzk1IDI5MC42NTYgOTIuOTk2QzI5MC44NzcgOTMuNTEzIDI5MSA5NC4wODE1IDI5MSA5NC42NzgyIDI5MSA5Ny4wNjUxIDI4OS4wMzggOTkgMjg2LjYxNyA5OUwyNDAuMzgzIDk5QzIzNy45NjMgOTkgMjM2IDk3LjA2NTEgMjM2IDk0LjY3ODIgMjM2IDk0LjM3OTkgMjM2LjAzMSA5NC4wODg2IDIzNi4wODkgOTMuODA3MkwyMzYuMzM4IDkzLjAxNjIgMjM2Ljg1OCA5Mi4xMzE0IDI1OS40NzMgNTMuNjI5NCAyNTkuOTYxIDUyLjc5ODUgMjYwLjQwNyA1Mi4yNjU4QzI2MS4yIDUxLjQ4MzcgMjYyLjI5NiA1MSAyNjMuNTA2IDUxWk0yNjMuNTg2IDY2LjAxODNDMjYwLjczNyA2Ni4wMTgzIDI1OS4zMTMgNjcuMTI0NSAyNTkuMzEzIDY5LjMzNyAyNTkuMzEzIDY5LjYxMDIgMjU5LjMzMiA2OS44NjA4IDI1OS4zNzEgNzAuMDg4N0wyNjEuNzk1IDg0LjAxNjEgMjY1LjM4IDg0LjAxNjEgMjY3LjgyMSA2OS43NDc1QzI2Ny44NiA2OS43MzA5IDI2Ny44NzkgNjkuNTg3NyAyNjcuODc5IDY5LjMxNzkgMjY3Ljg3OSA2Ny4xMTgyIDI2Ni40NDggNjYuMDE4MyAyNjMuNTg2IDY2LjAxODNaTTI2My41NzYgODYuMDU0N0MyNjEuMDQ5IDg2LjA1NDcgMjU5Ljc4NiA4Ny4zMDA1IDI1OS43ODYgODkuNzkyMSAyNTkuNzg2IDkyLjI4MzcgMjYxLjA0OSA5My41Mjk1IDI2My41NzYgOTMuNTI5NSAyNjYuMTE2IDkzLjUyOTUgMjY3LjM4NyA5Mi4yODM3IDI2Ny4zODcgODkuNzkyMSAyNjcuMzg3IDg3LjMwMDUgMjY2LjExNiA4Ni4wNTQ3IDI2My41NzYgODYuMDU0N1oiIGZpbGw9IiNGRkU1MDAiIGZpbGwtcnVsZT0iZXZlbm9kZCIvPjwvZz48L3N2Zz4=) no-repeat 1rem/1.8rem, #b32121;
+    padding: 1rem 1rem 1rem 3.7rem;
+    color: white;
+}
+
+    .blazor-error-boundary::after {
+        content: "An error has occurred."
+    }
+
+.app-container { display: flex; min-height: 100vh; flex-direction: column; margin: 0;}
+.app-main { flex: 1; display: flex; z-index: 8; position: relative;}
+.app-main .app-main__outer {  flex: 1;  flex-direction: column;  display: flex;  z-index: 12;}
+.app-main .app-main__inner {  padding: 30px 30px 0;    padding-top: 30px;  flex: 1;}
+.app-main .app-main__inner {  padding-top: 5px !important;}
+.scrollbar-sidebar {    background-color: #343A40;    margin-top: -30px;}
+
+.logoMenuShow, .logoMenuHide { background-color: white; height: 30px; text-align: center; padding-top: 4px; display: flex;}
+.logoMenuShow .imgLogo{width: 90%;}
+.logoMenuShow .btnHideNavMenu {width: 10%; text-align: right;}
+.logoMenuHide .imgLogo{display: none;}
+.logoMenuHide .btnHideNavMenu {position: relative; left: 262px; }
+
+.btnHideNavMenu:hover {    cursor: pointer;    color: lightgray;}
+
+.topBlock {height: 30px; background-color: white; display: flex;}
+.topBlockLogo {width: 280px;}
+.topBlockHead {margin: 0 auto;}
+.topBlockAuth {width: 200px; color: gray; font-weight: 600; padding-right: 5px; text-align: right;}
+
+.btnExitProject { border: 1px #C2CACF solid;    border-radius: 3px;    background-color: #E0E9EF;    padding: 2px 5px; 
+                     position: absolute; right: 20px; top: 60px; z-index: 99;}
+.btnExitProject a {color: gray;}
+.btnExitProject a:hover {text-decoration: none;}
+.btnExitProject:hover {opacity: 0.6;}
+
+.wrapNavMenuShow { background-color: #343A40;    width: 280px; color: #979CA4;}
+.wrapNavMenuShow hr, .wrapNavMenuHide hr {background-color: #4B545C; margin: 5px 0;}
+
+.wrapNavMenuShow .navMenuTop{padding-top: 5px;}
+.wrapNavMenuShow .navMenuTop > div a {color: #9583AE; font-family: "Source Sans Pro"; font-size: 16px; font-weight: 400; padding: 7px 7px; display: block; margin: 0 10px;}
+.wrapNavMenuShow .navMenuTop > div a:hover {color: lightgray; text-decoration: none;}
+.wrapNavMenuShow .navMenuTop > div a:hover .bi {color: lightgray !important;}
+
+.wrapNavMenuShow .navMenuMidle{}
+.wrapNavMenuShow .navMenuMidle a:hover {background-color: #3F474E; color: white; text-decoration: none;}
+.wrapNavMenuShow .navMenuMidle a:hover .bi {color: white !important;}
+.wrapNavMenuShow .navMenuMidle a{ color: #979CA4; font-family: "Source Sans Pro"; font-size: 16px; font-weight: 400; padding: 7px 7px; display: block; margin: 0 10px;
+                border-radius: 3px;}
+
+.wrapNavMenuShow .navMenuBottom{padding-top: 5px;}
+.wrapNavMenuShow .navMenuBottom > div a {color: #9583AE; font-family: "Source Sans Pro"; font-size: 16px; font-weight: 400; padding: 7px 7px; display: block; margin: 0 10px;}
+.wrapNavMenuShow .navMenuBottom > div a:hover {color: lightgray; text-decoration: none;}
+.wrapNavMenuShow .navMenuBottom > div a:hover .bi {color: lightgray !important;}
+.wrapNavMenuShow .navMenuTop i, .wrapNavMenuShow .navMenuMidle i, .wrapNavMenuShow .navMenuBottom i {padding-right: 7px; font-size: 16px !important;}
+
+.wrapNavMenuHide { background-color: #343A40;    width: 55px; color: #979CA4;}
+.wrapNavMenuHide .navMenuTop a, .wrapNavMenuHide .navMenuMidle a, .wrapNavMenuHide .navMenuBottom a {overflow: hidden; display: flex; align-items: center;}
+.wrapNavMenuHide .navMenuTop i, .wrapNavMenuHide .navMenuMidle i, .wrapNavMenuHide .navMenuBottom i {margin-left: 14px; padding-right: 15px; font-size: 26px !important;}
+.wrapNavMenuHide .navMenuTop span, .wrapNavMenuHide .navMenuMidle span, .wrapNavMenuHide .navMenuBottom span {display: none;}
+
+
+.wrapNavMenuHide .navMenuTop a:hover, .wrapNavMenuHide .navMenuMidle a:hover, .wrapNavMenuHide .navMenuBottom a:hover
+{background-color: #3F474E; color: white; text-decoration: none; display: flex; width: max-content; 
+ z-index: 99; position: relative;  padding: 0 20px 0 5px; font-family: "Source Sans Pro"; font-size: 20px; border-radius: 3px;}
+.wrapNavMenuHide .navMenuMidle a:hover .bi {color: white !important;}
+.wrapNavMenuHide .navMenuTop a:hover span, .wrapNavMenuHide .navMenuMidle a:hover span, .wrapNavMenuHide .navMenuBottom a:hover span {display: unset;}
+
+.projectPassportMain{background-color: deepskyblue; padding: 5px 10px;}
+.projectPassportNumber{color: white; font-weight: 600;}
+.projectPassportFullName{padding-left: 20px;}
+
+.priceAnalysisMainHead{margin:20px;}
+.priceAnalysisMainHeadStep{margin: 20px 40px;}
+.priceAnalysisMainBtns{}
+
+.createListCiphers .ciphers .cipher{padding: 1px 5px; border-radius:2px; background-color: lightgray; color: white;
+                                 margin: 10px; cursor: pointer;}
+.createListCiphers .ciphers .cipher:hover {text-decoration: underline; opacity: 0.7;}
+.createListCiphers .ciphers .activeCipher{padding: 1px 5px; border-radius:2px; background-color: #F28244; 
+                      color: white; margin: 10px; text-decoration: none; opacity: 1; cursor: default;}
+.createListCiphers .ciphers .activeCipher:hover{text-decoration: none; opacity: 1;}
+
+.createListCiphers .ciphers {margin-top: 10px;}
+.createListCiphers .cipherHead{color:orangered; font-weight: 600;}
+
+.btnDelete {color: red; font-size: 16px; cursor: pointer; margin: 0 2px;}
+.btnEdit {color: orange; font-size: 16px; cursor: pointer; margin: 0 2px;}
+.btnAdd {color: green; font-size: 16px; cursor: pointer; margin: 0 2px;}
+.btnClear {color: red; font-size: 16px; cursor: pointer; margin: 0 2px;}
+.btnUpload {color: green; font-size: 16px; cursor: pointer; margin: 0 2px;}
+.btnDownload {color: orange; font-size: 16px; cursor: pointer; margin: 0 2px;}
+
+.btnDelete:hover, .btnEdit:hover, .btnAdd:hover, .btnClear:hover,
+.btnUpload:hover, .btnDownload:hover{opacity: 0.5;}
+
+.createListCiphers .ciphers .showSection {padding: 1px 5px; border-radius:2px; background-color: lightgreen; 
+                                          color: darkgreen; margin: 10px; cursor: pointer; font-size: 14px;}
+.createListCiphers .ciphers .showSection:hover {opacity: 0.7;}
+
+.btnLoadSpecificationFromExcel { width: 85px; margin: 0 10px;}
+.btnUploadFile{width: 20px;height: 20px;}
+
+.blockBtnUpload input[type=file]{outline:0;opacity:0;pointer-events:none;user-select:none}
+.blockBtnUpload .label{width:25px; height:25px; display:block;cursor:pointer;text-align:center}
+.blockBtnUpload .label:hover{opacity: 0.7;}
+
+.menuSteps {margin-left: 20px;}
+.menuSteps .btnStep { padding: 3px 15px; margin: 5px;}
+
+.sectionNameLink {cursor: pointer;}
+.sectionNameLink:hover {text-decoration: underline; opacity: 0.7;}
+.blockListExistFilesForKP{float: left; width: 80px;}
+.blockListExistFilesForKP p {margin:0;}
+
+.BlockSearchSupplier { background-color: lightgray; width: 500px; height: 120px; position: absolute;
+                       overflow: auto;z-index: 9;}
+.BlockSearchSupplier p { padding: 3px 10px; margin: 0;}
+.BlockSearchSupplier p:hover { cursor: pointer; background-color: gray; color: white;}
+
+.hide {display: none !important;}
+.show {display: block !important;}
+.redCell{color: white; background-color: red; padding: 10px; margin: 0;}
+
+
+.BtnsSelectSpecifications {    padding: 10px;    border: 1px solid lightgray;    margin-bottom: 5px;
+    width: max-content;    border-radius: 2px;}
+
+.BackgroundColorOrange {background-color: orange;}

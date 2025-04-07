@@ -1,0 +1,14 @@
+[
+{"Id":"1", "Severity": "1", "Summary": "Тестовое сообщение!", "Detail": "Проверка работы, отправлено тестовое сообщение.", "Duration": "7000"},
+{"Id":"2", "Severity": "2", "Summary": "Успешно изменено!", "Detail": "", "Duration": "3000"},
+{"Id":"3", "Severity": "2", "Summary": "Успешно добавлено!", "Detail": "", "Duration": "3000"},
+{"Id":"4", "Severity": "2", "Summary": "Успешно удалено!", "Detail": "", "Duration": "3000"},
+{"Id":"14", "Severity": "2", "Summary": "Файл успешно сохранён!", "Detail": "", "Duration": "3000"},
+{"Id":"15", "Severity": "2", "Summary": "Файл успешно удалён!", "Detail": "", "Duration": "3000"},
+{"Id":"22", "Severity": "2", "Summary": "Данные успешно загружены!", "Detail": "", "Duration": "3000"},
+{"Id":"50", "Severity": "2", "Summary": "Синхронизация успешно выполнена!", "Detail": "", "Duration": "3000"},
+{"Id":"51", "Severity": "0", "Summary": "Внутренняя ошибка!", "Detail": "Во время синхрронизации произошла ошибка!", "Duration": "10000"},
+{"Id":"52", "Severity": "2", "Summary": "Успешно выполнено!", "Detail": "", "Duration": "3000"},
+{"Id":"53", "Severity": "0", "Summary": "Внутренняя ошибка!", "Detail": "Ошибка при обработке файла!", "Duration": "10000"},
+{"Id":"54", "Severity": "0", "Summary": "Внутренняя ошибка!", "Detail": "Ошибка при формировании файла!", "Duration": "10000"}
+]

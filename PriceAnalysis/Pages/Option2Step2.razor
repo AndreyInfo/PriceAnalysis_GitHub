@@ -1,0 +1,324 @@
+﻿@page "/option-2-step-2/{ProjectId:guid}"
+
+@using PriceAnalysis.Shared.Suppliers
+@using PriceAnalysis.Shared.Menu
+@using PriceAnalysis.BLL.Models
+@using PriceAnalysis.BLL.Services
+@using PriceAnalysis.Models
+@using AutoMapper
+
+@inject IMapper _mapper;
+@inject ISectionService _sectionService;
+@inject ISynchSpecificationAndKPService _synchSpecificationAndKPService;
+@inject NavigationManager _navigationManager;
+@inject NotificationService _notificationService;
+@inject TooltipService _tooltipService;
+@inject ISupplierService _supplierService;
+@inject DialogService _dialogService;
+
+<PageTitle>Вариант 2 Шаг 2 Синхронизация КП и спецификации</PageTitle>
+
+<div class="app-main">
+
+    <!-- Menu -->
+    <NavMenu ViewMenu="true" ProjectId="@ProjectId.ToString()" />
+
+    <div class="app-main__outer col-12">
+        <div class="app-main__inner">
+            <ProjectPassportMain ProjectId="@ProjectId" />
+
+            <div class="priceAnalysisMainHead">
+                <h3>Коньюктурный анализ цен (КАЦ)</h3>
+            </div>
+
+            <div class="row menuSteps">
+                <div class="">
+                    <button @onclick="@GoStep0" class="btn btnStep btn-secondary">Шаг 0</button>
+                    <button @onclick="@GoStep1" class="btn btnStep btn-secondary">Шаг 1</button>
+                    <button @onclick="@GoStep2" class="btn btnStep btn-secondary">Шаг 2</button>
+                    <button @onclick="@GoStep3" class="btn btnStep btn-primary">Шаг 3</button>
+                    <button @onclick="@Exit" class="btn btn-secondary btnStep">Выход из подготовки КАЦ</button>
+                </div>
+            </div>
+
+            <div class="createListCiphers">
+                <div class="row priceAnalysisMainHeadStep">
+                    <h5 class="col-md-10"> Вариант 2 Загрузка КП поставщиков и формирование КАЦ </h5>
+                </div>
+
+                <div class="row priceAnalysisBlockCreateList">
+                    <p class="col-md-6">Шаг 2 Синхронизация КП и спецификации (подготовка)</p>
+                    <div class="col-md-6">
+                        <button @onclick="@GoOption2Step3" type="button" class="btn btn-sm btn-secondary" style="width:250px;">
+                            Перейти к шагу 3 
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="main-card mb-3 card">
+                        <div class="card-body">
+                            <div>
+                                <table class="table table-bordered" style="width: auto;">
+                                    <thead>
+                                        <tr>
+                                            <td>#</td>
+                                            <td>Раздел</td>
+                                            <td>Спецификация</td>
+                                            <td>Кол-во строк</td>
+                                            <td>КП</td>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in listSynchSpecificationAndKPPrepDto)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <RadzenLabel MouseEnter="@(args => ShowTooltip(args, "Удалить строку") )"
+                                                             @onclick="@(() => DeleteString(item.SectionId))" class="bi bi-trash btnClear" />
+                                                    @if (item.IsSynch)
+                                                    {
+                                                        <RadzenLabel MouseEnter="@(args => ShowTooltip(args, "Провести повторную синхронизацию") )"
+                                                             @onclick="@(() => ReSynchronization(item.SectionId))" class="bi bi-play-btn-fill btnClear" />
+                                                    }
+                                                    else
+                                                    {
+                                                        if (item.ExistSpecification && item.ListExistFilesForKP.Count != 0)
+                                                        {
+                                                            <RadzenLabel MouseEnter="@(args => ShowTooltip(args, "Провести синхронизацию") )"
+                                                             @onclick="@(() => Synchronization(item.SectionId))" class="bi bi-play-circle-fill btnClear" />
+                                                        }
+                                                    }
+                                                </td>
+                                                <td style="width: 20%;">
+                                                    @item.SectionName
+                                                    @if (item.IsSynch)
+                                                    {
+                                                        <br /> <span style="font-size: 12px;">Синхронизация выполнена. </span>
+                                                        <br /> <a href="/synch-result/@ProjectId/@item.SectionId">Перейти к результату.</a>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    @if (item.ExistSpecification)
+                                                    {
+                                                        <span>есть</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span>нет</span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    @item.CountStringInSpecification
+                                                </td>
+                                                <td style="width: 60%;">
+                                                    @foreach (var itemIn in item.ListExistFilesForKP)
+                                                    {
+                                                        <div class="blockListExistFilesForKP">
+                                                            <p>@itemIn.Name</p>
+                                                            <p>xls 
+                                                                @if (itemIn.ExistExcel)
+                                                                {
+                                                                    <span>есть</span>
+                                                                }
+                                                                else
+                                                                {
+                                                                    <span>нет</span>
+                                                                }
+                                                            </p>
+                                                            <p>pdf
+                                                                @if (itemIn.ExistPDF)
+                                                                {
+                                                                    <span>есть</span>
+                                                                }
+                                                                else
+                                                                {
+                                                                    <span>нет</span>
+                                                                }
+                                                            </p>
+                                                        </div>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="alert alert-info" role="alert">
+                                <i class="bi bi-info-circle-fill"></i>
+                                Синхронизация доступна только при наличии загруженной спецификации и не менее одного КП в формате excel.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="main-card mb-3 card">
+                        <div class="card-body">
+                                <EditForm OnValidSubmit="AddSection" Model="selectedSectionId" form>
+                                    <div class="row">
+                                        <DataAnnotationsValidator />
+
+                                        <div class="position-relative form-group col-md-6">
+                                            <label class="">Выбрать раздел для синхронизации спецификации и КП поставщиков</label>
+                                        <InputSelect @bind-Value="selectedSectionId" class="form-control">
+                                            <option value="0" disabled selected hidden>Выберите раздел...</option>
+                                            @foreach (var item in sections)
+                                                {
+                                                    <option value="@item.Id">@item.Name</option>
+                                                }
+                                            </InputSelect>
+                                        </div>
+
+                                        <div class="position-relative form-group col-md-2">
+                                            <br />
+                                        @if (selectedSectionId != 0)
+                                        {
+                                            <button class="btn btn-sm btn-primary">Выбрать</button>
+                                        }
+                                        else
+                                        {
+                                            <button class="btn btn-sm btn-outline-secondary" disabled>Выбрать</button>
+                                        }
+                                        </div>
+                                    </div>
+                                </EditForm>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public Guid ProjectId { get; set; }
+
+    protected override void OnInitialized()
+    {
+        sections = _mapper.Map<List<SectionViewModel>>(_sectionService.GetList()
+            .Where(x => x.ProjectId == ProjectId)).OrderBy(x => x.Id).ToList();
+
+        listSynchSpecificationAndKPPrepDto = _synchSpecificationAndKPService.GetListSynchSpecificationAndKPPrep(ProjectId);
+
+    }
+
+    List<SectionViewModel> sections;
+    int selectedSectionId = 0;
+    List<SynchSpecificationAndKPPrepDto> listSynchSpecificationAndKPPrepDto;
+
+    void AddSection()
+    {
+        if (selectedSectionId == 0)
+        {
+            return; 
+        }
+
+        if (listSynchSpecificationAndKPPrepDto.Any(x => x.SectionId == selectedSectionId))
+        {
+            _notificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Выбранный раздел уже добавлен!"
+                });
+            return;
+        }
+
+        var res = _synchSpecificationAndKPService.CreateItemSynchSpecificationAndKPPrep(selectedSectionId);
+
+        _notificationService.Notify(res);
+        if (res.Severity == NotificationSeverity.Success)
+        {
+            listSynchSpecificationAndKPPrepDto = _synchSpecificationAndKPService.GetListSynchSpecificationAndKPPrep(ProjectId);
+            selectedSectionId = 0;
+        }
+    }
+
+    void DeleteString(int sectionId)
+    {
+        var res = _synchSpecificationAndKPService.DeleteItemSynchSpecificationAndKPPrep(sectionId);
+
+        _notificationService.Notify(res);
+        if (res.Severity == NotificationSeverity.Success)
+        {
+            listSynchSpecificationAndKPPrepDto = _synchSpecificationAndKPService.GetListSynchSpecificationAndKPPrep(ProjectId);
+            selectedSectionId = 0;
+        }
+    }
+
+    void Synchronization(int sectionId)
+    {
+        var res = _synchSpecificationAndKPService.Synchronization(sectionId);
+
+        _notificationService.Notify(res);
+        if (res.Severity == NotificationSeverity.Success)
+        {
+            listSynchSpecificationAndKPPrepDto = _synchSpecificationAndKPService.GetListSynchSpecificationAndKPPrep(ProjectId);
+            selectedSectionId = 0;
+        }
+    }
+
+    void ReSynchronization(int sectionId)
+    {
+        //NotImplemented();
+
+        var res = _synchSpecificationAndKPService.ReSynchronization(sectionId);
+
+        _notificationService.Notify(res);
+        if (res.Severity == NotificationSeverity.Success)
+        {
+            listSynchSpecificationAndKPPrepDto = _synchSpecificationAndKPService.GetListSynchSpecificationAndKPPrep(ProjectId);
+            selectedSectionId = 0;
+        }
+    }
+
+    void GoResult(int sectionId)
+    {
+        _navigationManager.NavigateTo("synch-result/" + ProjectId + "/" + sectionId, true);
+    }
+
+    void Exit()
+    {
+        _navigationManager.NavigateTo("project-passport/" + ProjectId, true);
+    }
+
+    void GoStep0()
+    {
+        _navigationManager.NavigateTo("cleate-list-ciphers/" + ProjectId + "/" + 0, true);
+    }
+
+    void GoStep1()
+    {
+        _navigationManager.NavigateTo("cleate-list-ciphers/" + ProjectId + "/" + 1, true);
+    }
+
+    void GoStep2()
+    {
+        _navigationManager.NavigateTo("cleate-list-ciphers/" + ProjectId + "/" + 2, true);
+    }
+
+    void GoStep3()
+    {
+        _navigationManager.NavigateTo("cleate-list-ciphers/" + ProjectId + "/" + 3, true);
+    }
+
+    void GoOption2Step3()
+    {
+        NotImplemented();
+        //_navigationManager.NavigateTo("project-passport/" + ProjectId, true);
+    }
+
+    void ShowTooltip(ElementReference elementReference, string text, TooltipOptions options = null)
+    => _tooltipService.Open(elementReference, text, options);
+
+    void NotImplemented()
+    {
+        _notificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Duration =  10000,
+                Summary = "Данный функционал ещё не реализован!"
+            });
+    }
+}

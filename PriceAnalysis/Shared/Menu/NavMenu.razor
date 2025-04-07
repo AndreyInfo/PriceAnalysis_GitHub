@@ -1,0 +1,108 @@
+﻿@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
+@inject ProtectedSessionStorage _sessionStorage;
+
+@if (dataIsLoaded)
+{
+    <div>
+        <div class="scrollbar-sidebar">
+            <div class="@classForLogo">
+                <div class="imgLogo">
+                    <img src="logo.png" alt="WebRoc2B" />
+                </div>
+                <div class="btnHideNavMenu">
+                    <i @onclick="HideOrShowMenu" class="bi bi-list" style=" font-size: 18px;"></i>
+                </div>
+            </div>
+            <div class="@classForMenu">
+                <div class="navMenuTop">
+                    <div class="">
+                        <a href="/project-list">
+                            <i class="bi bi-arrow-up-square-fill" style="color: #9583AE;"></i>
+                            <span>Переход к другим шифрам</span>
+                        </a>
+                    </div>
+                    <div>
+                        <a href="/">
+                            <i class="bi bi-house-fill" style="color: #9583AE;"></i>
+                            <span>Переход на главную страницу</span>
+                        </a>
+                    </div>
+                </div>
+                <hr />
+                @if (ViewMenu)
+                {
+                    <div class="navMenuMidle">
+                        <div>
+                            <a href="/project-passport/@ProjectId">
+                                <i class="bi bi-window" style="color: #979CA4;"></i>
+                                <span>Паспорт объекта</span>
+                            </a>
+                        </div>
+                        <div>
+                            <a href="/project-doc/@ProjectId">
+                                <i class="bi bi-folder-fill" style="color: #979CA4;"></i>
+                                <span>Документация</span>
+                            </a>
+                        </div>
+                        <div>
+                            <a href="/project-structure/@ProjectId">
+                                <i class="bi bi-tools" style="color: #979CA4;"></i>
+                                <span>Состав проекта</span>
+                            </a>
+                        </div>
+                    </div>
+                    <hr />
+                    <div class="navMenuBottom">
+                        <div>
+                            <a href="/cleate-list-ciphers/@ProjectId">
+                                <i class="bi bi-tools" style="color: #979CA4;"></i>
+                                <span>КАЦ</span>
+                            </a>
+                        </div>
+                    </div>
+                    <hr />
+                    <div class="navMenuBottom">
+                        <div>
+                            <a href="/suppliers">
+                                <i class="bi bi-tools" style="color: #979CA4;"></i>
+                                <span>Справочник поставщиков</span>
+                            </a>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+
+    [Parameter] public bool ViewMenu { get; set; } = true;
+    [Parameter] public string? ProjectId { get; set; }
+
+    bool dataIsLoaded = false;
+    bool statusMenu;
+    string classForMenu => statusMenu ? "wrapNavMenuShow" : "wrapNavMenuHide";
+    string classForLogo => statusMenu ? "logoMenuShow" : "logoMenuHide";
+    
+
+    protected override async Task OnInitializedAsync()
+    {
+        var storageResult = await _sessionStorage.GetAsync<bool>(nameof(statusMenu));
+        statusMenu = storageResult.Success 
+            ? storageResult.Value 
+            : true;
+        dataIsLoaded = true;
+    }
+
+    public async Task HideOrShowMenu()
+    {
+        statusMenu = !statusMenu;
+
+        await InvokeAsync(StateHasChanged);
+
+        await _sessionStorage.SetAsync(
+            key: nameof(statusMenu),
+            value: statusMenu);
+    }
+}

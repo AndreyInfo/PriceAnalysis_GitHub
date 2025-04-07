@@ -1,0 +1,45 @@
+﻿@using PriceAnalysis.BLL.Services
+@using PriceAnalysis.Models
+@using AutoMapper
+@using PriceAnalysis.BLL.Models
+
+@inject DialogService _dialogService;
+@inject ISupplierService _supplierService;
+@inject IMapper _mapper;
+@inject NotificationService _notificationService;
+
+<div class="">
+    <div class="">
+        <p>
+            <b>
+                Наименование поставщика:
+            </b> @Model.Name
+        </p>
+        <p><b>ID:</b>  @Model.Id</p>
+    </div>
+
+
+    <div class="">
+        <button type="button" class="btn btn-primary" @onclick="@( () => DeleteSupplier(Model))">Удалить</button>
+    </div>
+</div>
+
+@code {
+
+    [Parameter] public SupplierViewModel Model { get; set; }
+    [Parameter] public EventCallback RefreshDataCallback { get; set; }
+
+    public void DeleteSupplier(SupplierViewModel Model)
+    {
+        var res = _supplierService.DeleteItem(Model.Id);
+
+        _notificationService.Notify(res);
+
+        if (res.Severity == NotificationSeverity.Success)
+        {
+            RefreshDataCallback.InvokeAsync(new object());
+            _dialogService.Close();
+        }
+    }
+}
+

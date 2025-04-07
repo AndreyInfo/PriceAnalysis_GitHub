@@ -1,0 +1,18 @@
+﻿@inject DialogService DialogService;
+
+<div>
+    <p>У Вас нет загруженного Состава Проекта. 
+        Загрузите Состав Проекта или воспользуйтесь кнопкой «Создание списка шифров для КАЦ»
+    </p>
+</div>
+<div class="">
+    <button @onclick="@Ok" class="btn btn-primary">Ок</button>
+</div>
+
+@code {
+    
+    void Ok()
+    {
+        DialogService.Close();
+    }
+}

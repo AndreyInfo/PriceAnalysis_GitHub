@@ -1,0 +1,73 @@
+﻿@using ModuleProjects.Domain.Companies
+@using ModuleProjects.Domain.Projects
+@using ModuleProjects.Domain.Users
+
+@inject DialogService _dialogService
+@inject NavigationManager _navManager
+@inject NotificationService _notificationService
+
+<div>
+    <EditForm Model="@subcontractorItem" OnValidSubmit="@SaveDataAsync">
+        <div class="mb-3 col">
+            <label for="inpAddSubcontractor" class="form-label">Субподрядчик</label>
+            <InputSelect id="inpAddSubcontractor" class="form-control" @bind-Value="subcontractorItem.SubcontractorId" required>
+                <option value="@Guid.Empty">Не указан</option>
+                @foreach (var item in ProjectCompanies!)
+                {
+                    <option value="@item.Id">@item.Name</option>
+                }
+            </InputSelect>
+        </div>
+        <div class="mb-3 col">
+            <label for="inpAddProjectResponsibleUser" class="form-label">Ответсвенный за проект</label>
+            <InputSelect id="inpAddProjectResponsibleUser" class="form-control" @bind-Value="subcontractorItem.ProjectResponsibleUserId">
+                <option value="">Не указан</option>
+                @foreach (var item in ProjectUsers!)
+                {
+                    <option value="@item.Id">@item.FullName</option>
+                }
+            </InputSelect>
+        </div>
+        <div class="text-center">
+            <a class="btn btn-default m-3" @onclick="CloseModal">Отмена</a>
+            <button type="submit" class="btn btn-primary m-3" disabled="@isDisabled">Добавить субподрядчика</button>
+        </div>
+    </EditForm>
+</div>
+
+
+@code {
+    [Parameter] public IReadOnlyList<Company>? ProjectCompanies { get; set; }
+    [Parameter] public IReadOnlyList<User>? ProjectUsers { get; set; }
+    [Parameter] public EventCallback<ProjectSubcontractorItem> RefreshDataCallback { get; set; }
+
+    private ProjectSubcontractorItem subcontractorItem = new();
+    private bool isDisabled = false;
+
+    private async Task SaveDataAsync()
+    {
+        isDisabled = true;
+
+        if (subcontractorItem.SubcontractorId != Guid.Empty)
+        {
+            await RefreshDataCallback.InvokeAsync(subcontractorItem);
+            CloseModal();
+        }
+        else
+        {
+            _notificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Укажите субподрядчика"
+                });
+        }
+
+        isDisabled = false;
+    }
+
+    private void CloseModal()
+    {
+        _dialogService.Close();
+    }
+}
+

@@ -1,0 +1,27 @@
+﻿@using ModuleProjects.Application.Projects.Queries.GetProjectDescriptorById;
+
+@inject ISender _mediator;
+
+
+<div class="projectPassportMain h5">
+    @if(project is null)
+    {
+        <span class="projectPassportNumber">&hellip;</span>
+    }
+    else
+    {
+        <span class="projectPassportNumber">Объект №@project.Number</span>
+        <span class="projectPassportFullName">@project.Name</span>
+    }
+</div>
+
+@code {
+    [Parameter] public Guid ProjectId { get; set; }
+    private ProjectDescriptor? project;
+
+    protected override async Task OnInitializedAsync()
+    {
+        //get project
+        project = await _mediator.Send(new GetProjectDescriptorByIdRequest(ProjectId));
+    }
+}

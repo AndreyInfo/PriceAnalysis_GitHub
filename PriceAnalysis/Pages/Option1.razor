@@ -1,0 +1,247 @@
+﻿@page "/option-1/{ProjectId:guid}"
+
+@using PriceAnalysis.Shared.Menu
+@using PriceAnalysis.BLL.Models
+@using PriceAnalysis.BLL.Services
+@using PriceAnalysis.Models
+@using AutoMapper
+
+@inject IMapper _mapper;
+@inject ISectionService _sectionService;
+@inject NavigationManager _navigationManager;
+@inject NotificationService _notificationService;
+@inject TooltipService _tooltipService
+
+<PageTitle>Вариант 1 Загрузка таблиц КАЦ и КП</PageTitle>
+
+<div class="app-main">
+
+    <!-- Menu -->
+    <NavMenu ViewMenu="true" ProjectId="@ProjectId.ToString()" />
+
+    <div class="app-main__outer col-12">
+        <div class="app-main__inner">
+            <ProjectPassportMain ProjectId="@ProjectId" />
+
+            <div class="priceAnalysisMainHead">
+                <h3>Коньюктурный анализ цен (КАЦ)</h3>
+            </div>
+
+            <div class="row menuSteps">
+                <div class="">
+                    <button @onclick="@GoStep0" class="btn btnStep btn-secondary">Шаг 0</button>
+                    <button @onclick="@GoStep1" class="btn btnStep btn-secondary">Шаг 1</button>
+                    <button @onclick="@(() => GoStep2(null))" class="btn btnStep btn-secondary">Шаг 2</button>
+                    <button @onclick="@GoStep3" class="btn btnStep btn-primary">Шаг 3</button>
+                    <button @onclick="@Exit" class="btn btn-secondary btnStep">Выход из подготовки КАЦ</button>
+                    <button @onclick="@Exit" type="button" class="btn btn-sm btn-secondary" style="width:250px;">
+                        Перейти к формированию пакетов документов КАЦ (Монитор КАЦ)
+                    </button>
+                </div>
+            </div>
+
+            <div class="row priceAnalysisMainHeadStep">
+                <p class="col-md-6"> Вариант 1 Загрузка Подготовленных таблиц КАЦ и КП для неё </p>
+            </div>
+
+            <div class="row">
+                <div class="main-card mb-3 card">
+                    <div class="card-body">
+                        <div>
+                            <table class="table table-info">
+                                <thead>
+                                    <tr class="table-primary">
+                                        <td>#</td>
+                                        <td>Раздел</td>
+                                        <td>Таблица КАЦ</td>
+                                        <td>КП поставщиков</td>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @{int i = 1;}
+                                    @foreach (var item in sections)
+                                    {
+                                        <tr>
+                                            <td>@i</td>
+                                            <td>
+                                                <span @onclick="@(() => GoToSection(item.Id))" class="sectionNameLink"> @item.Name </span>
+                                            </td>
+                                            <td>
+                                                @if (item.PriceAnalysisDocFileId is null)
+                                                {
+                                                    <div class="blockBtnUpload">
+                                                        <RadzenLabel class="label" MouseEnter="@(args => ShowTooltip(args, "Загрузить файл") )">
+                                                            <i class="bi bi-cloud-upload-fill btnUpload"></i>
+                                                            <BlazorInputFile.InputFile OnChange="@(files => UploadFilePriceAnalysis(files, item.Id))" MaxBufferSize="6000000" class="btn btn-primary btn-sm btnUploadFile" />
+                                                        </RadzenLabel>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <span>есть </span>
+                                                    
+                                                    <RadzenLabel MouseEnter="@(args => ShowTooltip(args, "Скачать файл") )"
+                                                         @onclick="@(() => DownloadFilePriceAnalysis(item.Id))" class="bi bi-cloud-download-fill btnDownload" />
+                                                    <RadzenLabel MouseEnter="@(args => ShowTooltip(args, "Удалить файл") )" 
+                                                        @onclick="@(() => DeleteFilePriceAnalysis(item.Id))" class="bi bi-trash btnClear" />
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (item.KPDocFilesId is null)
+                                                {
+                                                    <div class="blockBtnUpload">
+                                                        <RadzenLabel class="label" MouseEnter="@(args => ShowTooltip(args, "Загрузить файл") )">
+                                                            <i class="bi bi-cloud-upload-fill btnUpload"></i>
+                                                            <BlazorInputFile.InputFile multiple OnChange="@(files => UploadFilesKP(files, item.Id))" MaxBufferSize="6000000" class="btn btn-primary btn-sm btnUploadFile" />
+                                                        </RadzenLabel>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <span> есть @item.CountKPDocFiles.ToString() файла(ов) </span>
+                                                    
+                                                    <RadzenLabel MouseEnter="@(args => ShowTooltip(args, "Скачать файл(ы)"))"
+                                                         @onclick="@(() => DownloadFilesKP(item.Id))" class="bi bi-cloud-download-fill btnDownload" />
+                                                    <RadzenLabel MouseEnter="@(args => ShowTooltip(args, "Удалить файл"))"
+                                                         @onclick="@(() => DeleteFilesKP(item.Id))" class="bi bi-trash btnClear" />
+                                                }
+                                            </td>
+                                        </tr>
+                                        i++;
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+@code {
+    [Parameter] public Guid ProjectId { get; set; }
+
+    protected override void OnInitialized()
+    {
+        sections = _mapper.Map<List<SectionViewModel>>(_sectionService.GetList()
+            .Where(x => x.ProjectId == ProjectId)).OrderBy(x => x.Id).ToList();
+    }
+
+    List<SectionViewModel> sections;
+
+    void Exit()
+    {
+        _navigationManager.NavigateTo("project-passport/" + ProjectId, true);
+    }
+
+    void GoToSection(int sectionId)
+    {
+        _navigationManager.NavigateTo("cleate-list-ciphers/" + ProjectId + "/" + 2 + "/" + sectionId, true);
+    }
+
+    async Task UploadFilePriceAnalysis(IFileListEntry[] files, int sectionId)
+    {
+        IFileListEntry file = files.FirstOrDefault();
+
+        var res = await _sectionService.UploadTablePriceAnalysis(file, sectionId);
+        _notificationService.Notify(res);
+        if (res.Severity == NotificationSeverity.Success)
+        {
+            RefreshData();
+        }
+    }
+
+    void DeleteFilePriceAnalysis(int sectionId)
+    {
+        var res = _sectionService.DeleteTablePriceAnalysis(sectionId);
+        _notificationService.Notify(res);
+        if (res.Severity == NotificationSeverity.Success)
+        {
+            RefreshData();
+        }
+    }
+
+    void DownloadFilePriceAnalysis(int sectionId)
+    {
+        var res = _sectionService.DownloadFilePriceAnalysis(sectionId);
+
+
+        if (res.Item1.Severity == NotificationSeverity.Success)
+        {
+            _navigationManager.NavigateTo(res.Item2, true);
+            //RefreshData();
+        }
+        else
+        {
+            _notificationService.Notify(res.Item1);
+            return;
+        }
+    }
+
+    async Task UploadFilesKP(IFileListEntry[] files, int sectionId)
+    {
+        var res = await _sectionService.UploadFilesKP(files, sectionId);
+        _notificationService.Notify(res);
+        if (res.Severity == NotificationSeverity.Success)
+        {
+            RefreshData();
+        }
+    }
+
+    void DeleteFilesKP(int sectionId)
+    {
+        var res = _sectionService.DeleteFilesKP(sectionId);
+        _notificationService.Notify(res);
+        if (res.Severity == NotificationSeverity.Success)
+        {
+            RefreshData();
+        }
+    }
+
+    void DownloadFilesKP(int sectionId)
+    {
+        var res = _sectionService.DownloadFilesKP(sectionId);
+
+        if (res.Item1.Severity == NotificationSeverity.Success)
+        {
+            _navigationManager.NavigateTo(res.Item2, true);
+        }
+        else
+        {
+            _notificationService.Notify(res.Item1);
+            return;
+        }
+    }
+
+    public void RefreshData()
+    {
+        sections = _mapper.Map<List<SectionViewModel>>(_sectionService.GetList()
+            .Where(x => x.ProjectId == ProjectId)).OrderBy(x => x.Id).ToList();
+    }
+
+    void ShowTooltip(ElementReference elementReference, string text, TooltipOptions options = null) 
+    => _tooltipService.Open(elementReference, text, options);
+
+    void GoStep0()
+    {
+        _navigationManager.NavigateTo("cleate-list-ciphers/" + ProjectId + "/" + 0, true);
+    }
+
+    void GoStep1()
+    {
+        _navigationManager.NavigateTo("cleate-list-ciphers/" + ProjectId + "/" + 1, true);
+    }
+
+    void GoStep2(int? sectionId = null)
+    {
+        _navigationManager.NavigateTo("cleate-list-ciphers/" + ProjectId + "/" + 2, true);
+    }
+
+    void GoStep3()
+    {
+        _navigationManager.NavigateTo("cleate-list-ciphers/" + ProjectId + "/" + 3, true);
+    }
+}

@@ -1,0 +1,50 @@
+﻿@using PriceAnalysis.Models
+@using PriceAnalysis.BLL.Services
+@using AutoMapper
+@using PriceAnalysis.BLL.Models
+
+@inject DialogService _dialogService;
+@inject ISectionService _sectionService;
+@inject IMapper _mapper;
+@inject NotificationService _notificationService;
+
+<div>
+    <EditForm OnValidSubmit="UpdateSection" Model="Section" form class="">
+        <div class="row">
+            <div class="col-md-12">
+                <DataAnnotationsValidator />
+            </div>
+        </div>
+
+        <div class="position-relative form-group">
+            <label for="Section" class="">
+                Название раздела
+            </label>
+            <InputText @bind-Value="Section.Name" name="Section" class="form-control" />
+            <ValidationMessage For="(() => Section.Name)" />
+        </div>
+        <br />
+        <div class="">
+            <button class="btn btn-primary btn-sm">Сохранить</button>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+
+    [Parameter] public SectionViewModel Section { get; set; }
+    [Parameter] public EventCallback<int> RefreshDataCallback { get; set; }
+
+    void UpdateSection()
+    {
+        var res = _sectionService.UpdateItem(_mapper.Map<SectionDto>(Section));
+
+        _notificationService.Notify(res);
+        if (res.Severity == NotificationSeverity.Success)
+        {
+            RefreshDataCallback.InvokeAsync(Section.Id);
+            _dialogService.Close();
+        }
+        
+    }
+}

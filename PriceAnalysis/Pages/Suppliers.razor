@@ -1,0 +1,115 @@
+﻿@page "/suppliers"
+
+@using PriceAnalysis.Shared.Menu
+@using PriceAnalysis.Models
+@using PriceAnalysis.BLL.Services
+@using AutoMapper
+@using PriceAnalysis.Shared.Suppliers
+
+@inject ISupplierService _supplierService;
+@inject IMapper _mapper;
+@inject DialogService _dialogService;
+
+<PageTitle>Справочник поставщиков</PageTitle>
+
+<div class="app-main">
+
+    <!-- Menu -->
+    <NavMenu ViewMenu="false" />
+
+    <div class="app-main__outer col-12">
+        <div class="app-main__inner">
+            <div class="row">
+                @*<h4 style="margin: 5px auto;">Справочник поставщиков</h4>*@
+            </div>
+
+            <div class="row">
+                <div class="main-card mb-3 card">
+                    <div class="card-body">
+                        <h5 class="card-title">Справочник поставщиков</h5>
+                    </div>
+
+                    <RadzenDataGrid AllowSorting="true" Data="@list" TItem="SupplierViewModel" Style="width: auto;" AllowColumnResize="true" PageSize="5" AllowPaging="true">
+                        <Columns>
+                            <RadzenDataGridColumn TItem="SupplierViewModel" Title="Действия" Width="80px" TextAlign="TextAlign.Center" Sortable="false">
+                                <Template Context="data">
+                                    <i @onclick="@(() => InitEditSupplierModal(data))" class="bi bi-pencil-square btnEdit" data-toggle="modal" data-target="#EditSupplierModal"> </i>
+                                    <i @onclick="@(() => InitDeleteSupplierModal(data))" class="bi bi-x-square btnDelete" data-toggle="modal" data-target="#DeleteSupplierModal"> </i>
+                                </Template>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="SupplierViewModel" Property="Id" Title="ИД" Width="70px" TextAlign="TextAlign.Center" />
+
+                            <RadzenDataGridColumn TItem="SupplierViewModel" Property="Name" Width="250px" TextAlign="TextAlign.Left">
+                                <HeaderTemplate>
+                                    <span>Наименование поставщика</span>
+                                </HeaderTemplate>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="SupplierViewModel" Property="Inn" Width="80px" TextAlign="TextAlign.Left">
+                                <HeaderTemplate>
+                                    <span>ИНН</span>
+                                </HeaderTemplate>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="SupplierViewModel" Property="Kpp" Width="80px" TextAlign="TextAlign.Left">
+                                <HeaderTemplate>
+                                    <span>КПП</span>
+                                </HeaderTemplate>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="SupplierViewModel" Property="WebSite" Width="150px" TextAlign="TextAlign.Left">
+                                <HeaderTemplate>
+                                    <span>Веб сайт</span>
+                                </HeaderTemplate>
+                            </RadzenDataGridColumn>
+
+                        </Columns>
+                    </RadzenDataGrid>
+
+                </div>
+            </div>
+
+            <div class="main-card mb-3 card">
+                <div class="card-body">
+                    <button @onclick="@InitCreateSupplierModal" type="button" class="btn mr-2 mb-2 btn-primary">Добавить</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        list = _mapper.Map<List<SupplierViewModel>>(_supplierService.GetList())
+            .OrderBy(x => x.Name).ToList();
+    }
+
+    List<SupplierViewModel> list;
+
+    async Task InitCreateSupplierModal()
+    {
+        var result = await _dialogService.OpenAsync("Добавление поставщика!", ds =>
+        @<CreateSupplierModal RefreshDataCallback="RefreshData" />, new DialogOptions { Height = "auto" });
+    }
+
+    async Task InitEditSupplierModal(SupplierViewModel model)
+    {
+        var result = await _dialogService.OpenAsync("Редактирование поставщика!", ds =>
+        @<EditSupplierModal Model="@model" RefreshDataCallback="RefreshData" />, new DialogOptions { Height = "auto" });
+    }
+
+    async Task InitDeleteSupplierModal(SupplierViewModel model)
+    {
+        var result = await _dialogService.OpenAsync("Удаление поставщика!", ds =>
+        @<DeleteSupplierModal Model="@model" RefreshDataCallback="RefreshData" />, new DialogOptions { Height = "auto" });
+    }
+
+    public void RefreshData()
+    {
+        list = _mapper.Map<List<SupplierViewModel>>(_supplierService.GetList())
+            .OrderBy(x => x.Name).ToList();
+    }
+}

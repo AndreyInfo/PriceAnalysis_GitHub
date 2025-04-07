@@ -1,0 +1,132 @@
+﻿@page "/synch-result/{ProjectId:guid}/{SectionId:int}"
+
+@using PriceAnalysis.Shared.Menu
+@using PriceAnalysis.BLL.Models
+@using PriceAnalysis.BLL.Services
+@using PriceAnalysis.Models
+@using AutoMapper
+
+@inject ISynchSpecificationAndKPService _synchSpecificationAndKPService;
+@inject NavigationManager _navigationManager;
+@inject ISectionService _sectionService;
+@inject IMapper _mapper;
+
+<PageTitle>Результат синхронизации</PageTitle>
+
+<div class="app-main">
+
+    <!-- Menu -->
+    <NavMenu ViewMenu="true" ProjectId="@ProjectId.ToString()" />
+
+    <div class="app-main__outer col-12">
+        <div class="app-main__inner">
+            <ProjectPassportMain ProjectId="@ProjectId" />
+
+            <div class="priceAnalysisMainHead">
+                <h3>Коньюктурный анализ цен (КАЦ)</h3>
+            </div>
+
+            <div class="row menuSteps">
+                <div class="">
+                    @*<button @onclick="@GoStep0" class="btn btnStep btn-secondary">Шаг 0</button>
+                    <button @onclick="@GoStep1" class="btn btnStep btn-secondary">Шаг 1</button>
+                    <button @onclick="@(() => GoStep2(null))" class="btn btnStep btn-secondary">Шаг 2</button>
+                    <button @onclick="@GoStep3" class="btn btnStep btn-secondary">Шаг 3</button>*@
+                    <button @onclick="@Exit" class="btn btn-secondary btnStep">Выход из подготовки КАЦ</button>
+                    @*<button @onclick="@Exit" type="button" class="btn btn-sm btn-secondary" style="width:250px;">
+                        Перейти к формированию пакетов документов КАЦ (Монитор КАЦ)
+                    </button>*@
+                </div>
+            </div>
+
+            <div class="row priceAnalysisMainHeadStep">
+                <h5 class="col-md-10"> Вариант 2 Загрузка КП поставщиков и формирование КАЦ </h5>
+            </div>
+
+            <div class="row priceAnalysisBlockCreateList">
+                <p class="col-md-6">Шаг 2 Синхронизация КП и спецификации (результат)</p>
+                <div class="col-md-6">
+                    <button @onclick="@GoStepPrep" type="button" class="btn btn-sm btn-secondary" style="width:250px;">
+                        Назад к подготовке
+                    </button>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="main-card mb-3 card">
+                    <div class="card-body">
+                        <p>Результат синхронизации. Раздел 
+                            <b>@currentSection.Name</b>
+                        </p>
+                        <div>
+                            <table class="table table-sm table-info">
+                                <thead>
+                                    <tr class="table-primary">
+                                        <td>#</td>
+                                        <td>Наименование</td>
+                                        <td>Тип/Марка</td>
+                                        <td>Код продукта</td>
+                                        <td>Ед. изм.</td>
+                                        @for (int i = 1; i <= model[0].SynchPriceList.Count; i++)
+                                        {
+                                            <td>Поставщик @i <br /> @model[0].SynchPriceList[i-1].SupplierName </td>
+                                        }
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @{int num = 1;}
+                                    @foreach (var item in model)
+                                    {
+                                        <tr>
+                                            <td>@num</td>
+                                            <td>@item.Name</td>
+                                            <td>@item.TypeProduct</td>
+                                            <td>@item.CodeProduct</td>
+                                            <td>@item.UnitOfMeasurementName</td>
+                                            @foreach (var item2 in item.SynchPriceList)
+                                            {
+                                                string cl = "";
+                                                if (item2.Price == 0)
+                                                {
+                                                    cl = "redCell";
+                                                }
+                                                <td><p class="@cl">@item2.Price</p></td>
+                                            }
+                                        </tr>
+                                        num++;
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public Guid ProjectId { get; set; }
+    [Parameter] public int SectionId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        model = _synchSpecificationAndKPService.GetSynchSpecificationAndKP(SectionId);
+        currentSection = _mapper.Map<SectionViewModel>(_sectionService.GetById(SectionId));
+    }
+
+    List<SynchSpecificationAndKPResultDto> model;
+    SectionViewModel currentSection;
+
+    void Exit()
+    {
+        _navigationManager.NavigateTo($"project-passport/{ProjectId}", true);
+    }
+
+    void GoStepPrep()
+    {
+        _navigationManager.NavigateTo($"option-2-step-2/{ProjectId}", true);
+    }
+
+}

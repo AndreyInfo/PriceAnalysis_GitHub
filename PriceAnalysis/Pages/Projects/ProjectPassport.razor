@@ -1,0 +1,274 @@
+﻿@page "/project-passport/{ProjectId:guid}"
+
+@using ModuleProjects.Application.Common.Extensions
+@using ModuleProjects.Application.Projects.Queries.GetById
+@using ModuleProjects.Domain.Projects
+@using PriceAnalysis.Common
+@using PriceAnalysis.Shared.Menu
+
+@inject NavigationManager _navManager
+@inject ISender _mediator
+
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+<PageTitle>Паспорт объекта #@project?.Number</PageTitle>
+
+<div class="app-main">
+
+    <!-- Menu -->
+    <NavMenu ViewMenu="true" ProjectId="@ProjectId.ToString()" />
+
+    <div class="app-main__outer col-12">
+        <div class="app-main__inner">
+            <div class="projectPassportMain h5">
+                <span class="projectPassportNumber">Объект №@project?.Number</span>
+                <span class="projectPassportFullName">@project?.Name</span>
+            </div>
+
+            <div class="clearfix">
+                <div class="priceAnalysisMainHead float-start">
+                    <h3>Паспорт объекта</h3>
+                </div>
+                <div class="text-end">
+                    <a class="btn btn-primary m-3" @onclick="GotoProjectPassportEditPage">Редактировать паспорт объекта <i class="bi bi-pen"></i></a>
+                </div>
+            </div>
+
+            @if (project is null)
+            {
+                <p>Загрузка &hellip;</p>
+            }
+            else
+            {
+                <div class="row">
+                    <div class="col-lg-4">
+                        <div class="card mb-4 rounded-3 shadow-sm mh435">
+                            <div class="card-header">
+                                <p class="my-0 fw-normal">Описание</p>
+                            </div>
+                            @if (project.ImageExt is not null)
+                            {
+                                <img src="@project.ImageOrigSrc" class="card-img-top" alt="" />
+                            }
+                            <div class="card-body">
+                                <p class="card-text fst-italic">@project.Description</p>
+                                <dl>
+                                    <dt>Сроки</dt>
+                                    <dd>@project.StartDate.ToLongDateString()&nbsp;→&nbsp;@(project.EndDate is null ? "не указано" : project.EndDate?.ToLongDateString())</dd>
+
+                                    <dt>Cоздан</dt>
+                                    <dd>@project.CreatedOn @project.CreatedBy</dd>
+
+                                    @if (@project.RegisterUserId is not null)
+                                    {
+                                        <dt>Зарегистрирован</dt>
+                                        <dd>@project.RegisterDate @project.RegisterUser</dd>
+                                    }
+
+                                    @if (@project.LastModifiedOn is not null)
+                                    {
+                                        <dt>Обновлен</dt>
+                                        <dd>@project.LastModifiedOn @project.LastModifiedBy</dd>
+                                    }
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4">
+                        <div class="card mb-4 shadow-sm mh435">
+                            <div class="card-header">
+                                <p class="my-0 fw-normal">Параметры</p>
+                            </div>
+                            <div class="card-body">
+                                <dl>
+                                    <dt>Стадия</dt>
+                                    <dd>@project.Stage</dd>
+
+                                    <dt>Сметная база</dt>
+                                    <dd>@(project.SmetDistrictNumber is null ? "не указана" : project.SmetDistrictNumber.ToString())</dd>
+
+                                    <dt>Метод сметного расчета</dt>
+                                    <dd>@(project.EstimateCalculationType is null ? "не указан" : project.EstimateCalculationType.ToString())</dd>
+
+                                    <dt>Статус</dt>
+                                    <dd>@project.Status.GetDescription()</dd>
+
+                                    <dt>Валюта расчетов</dt>
+                                    <dd>@project.CurrencyCode</dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4">
+                        <div class="card mb-4 rounded-3 shadow-sm mh435">
+                            <div class="card-header">
+                                <p class="my-0 fw-normal">Расположение объекта</p>
+                            </div>
+                            <div id="dMap">
+                                <p class="text-center">Загрузка карты&hellip;</p>
+                            </div>
+                            <div class="card-body">
+                                <p class="card-text">Адрес объекта: @(project.Address ?? "не указан")</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4 rounded-3 shadow-sm">
+                    <div class="card-header">
+                        <p class="my-0 fw-normal">Участники</p>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-hover">
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <dl>
+                                            <dt>Заказчик</dt>
+                                            <dd>@(project.Customer ?? "не указан")</dd>
+                                        </dl>
+                                    </td>
+                                    <td>
+                                        <dl>
+                                            <dt>Ответственный за проект</dt>
+                                            <dd>@(project.ProjectResponsibleUser ?? "не указан")</dd>
+                                        </dl>
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(project.ProjectResponsibleUserEmail))
+                                        {
+                                            <a href="mailto:@project.ProjectResponsibleUserEmail">@project.ProjectResponsibleUserEmail</a>
+                                            <br />
+                                        }
+                                        @if (!string.IsNullOrEmpty(project.ProjectResponsibleUserPhoneNumber))
+                                        {
+                                            @project.ProjectResponsibleUserPhoneNumber
+                                        }
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <dl>
+                                            <dt>Ген. проектировщик</dt>
+                                            <dd>@(project.GeneralDesigner ?? "не указан")</dd>
+                                        </dl>
+                                    </td>
+                                    <td>
+                                        <dl>
+                                            <dt>ГИП/ГАП проекта</dt>
+                                            <dd>@(project.ProjectManager ?? "не указан")</dd>
+                                        </dl>
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(project.ProjectManagerEmail))
+                                        {
+                                            <a href="mailto:@project.ProjectManagerEmail">@project.ProjectManagerEmail</a>
+                                            <br />
+                                        }
+                                        @if (!string.IsNullOrEmpty(project.ProjectManagerPhoneNumber))
+                                        {
+                                            @project.ProjectManagerPhoneNumber
+                                        }
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <dl>
+                                            <dt>Ген. подрядчик</dt>
+                                            <dd>@(project.GeneralContractor ?? "не указан")</dd>
+                                        </dl>
+                                    </td>
+                                    <td>
+                                        <dl>
+                                            <dt>Ответственный за объект</dt>
+                                            <dd>@(project.ObjectResponsibleUser ?? "не указан")</dd>
+                                        </dl>
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(project.ObjectResponsibleUserEmail))
+                                        {
+                                            <a href="mailto:@project.ObjectResponsibleUserEmail">@project.ObjectResponsibleUserEmail</a>
+                                            <br />
+                                        }
+                                        @if (!string.IsNullOrEmpty(project.ObjectResponsibleUserPhoneNumber))
+                                        {
+                                            @project.ObjectResponsibleUserPhoneNumber
+                                        }
+                                    </td>
+                                </tr>
+                                @for (var i = 0; i < project.Subcontractors.Count; i++)
+                                {
+                                    <tr>
+                                        <td>
+                                            <dl>
+                                                <dt>Субподрячик @(i + 1)</dt>
+                                                <dd>@project.Subcontractors[i].Subcontractor</dd>
+                                            </dl>
+                                        </td>
+                                        <td>
+                                            <dl>
+                                                <dt>Ответственный за проект @(i + 1)</dt>
+                                                <dd>@project.Subcontractors[i].ProjectResponsibleUser</dd>
+                                            </dl>
+                                        </td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(project.Subcontractors[i].ProjectResponsibleUserEmail))
+                                            {
+                                                <a href="mailto:@project.Subcontractors[i].ProjectResponsibleUserEmail">@project.Subcontractors[i].ProjectResponsibleUserEmail</a>
+                                                <br />
+                                            }
+                                            @if (!string.IsNullOrEmpty(project.Subcontractors[i].ProjectResponsibleUserPhoneNumber))
+                                            {
+                                                @project.Subcontractors[i].ProjectResponsibleUserPhoneNumber
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public Guid ProjectId { get; set; }
+    private Project? project = null;
+    private IJSObjectReference? jsModule;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var projectResult = await _mediator.Send(new GetProjectByIdRequest(ProjectId));
+        project = projectResult?.Project;
+
+        if (project is not null)
+        {
+            await InvokeAsync(StateHasChanged); //обновляем состояние страницы для JS
+
+            //import js
+            jsModule = await JS.InvokeAsync<IJSObjectReference>("import", PathsHelper.GetRazorJsPath(GetType()));
+            await jsModule.InvokeVoidAsync("showOpenStreetMap", project.GeoLat, project.GeoLng, project.GeoZoom, "dMap");
+        }
+    }
+    
+    private void GotoProjectPassportEditPage()
+    {
+       _navManager.NavigateTo($"/project-passport-edit/{ProjectId}", true);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (jsModule is not null)
+        {
+            await jsModule.DisposeAsync();
+        }
+    }
+}

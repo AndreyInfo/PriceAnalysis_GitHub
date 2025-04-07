@@ -1,0 +1,63 @@
+﻿@using PriceAnalysis.BLL.Services
+@using PriceAnalysis.Models
+@using AutoMapper
+@using PriceAnalysis.BLL.Models
+
+@inject DialogService _dialogService;
+@inject ISupplierService _supplierService;
+@inject IMapper _mapper;
+@inject NotificationService _notificationService;
+
+<div class="">
+    <EditForm OnValidSubmit="EditSupplier" Model="Model" form>
+        <div class="row">
+            <div class="col-md-12">
+                <DataAnnotationsValidator />
+
+                <div class="position-relative form-group">
+                    <label for="Name">Наименование поставщика</label>
+                    <InputText @bind-Value="Model.Name" name="Name" id="Name" class="form-control" />
+                    <ValidationMessage For="(() => Model.Name)" />
+                </div>
+
+                <div class="position-relative form-group">
+                    <label for="Inn">ИНН</label>
+                    <InputText @bind-Value="Model.Inn" name="Inn" id="Inn" class="form-control" />
+                    <ValidationMessage For="(() => Model.Inn)" />
+                </div>
+
+                <div class="position-relative form-group">
+                    <label for="Kpp">КПП</label>
+                    <InputText @bind-Value="Model.Kpp" name="Kpp" id="Kpp" class="form-control" />
+                    <ValidationMessage For="(() => Model.Kpp)" />
+                </div>
+
+                <div class="position-relative form-group">
+                    <label for="WebSite">Веб сайт</label>
+                    <InputText @bind-Value="Model.WebSite" name="WebSite" id="WebSite" class="form-control" />
+                    <ValidationMessage For="(() => Model.WebSite)" />
+                </div>
+            </div>
+        </div>
+        <div class="">
+            <button class="btn btn-primary">Сохранить</button>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    [Parameter] public EventCallback RefreshDataCallback { get; set; }
+    [Parameter] public SupplierViewModel Model { get; set; }
+
+    private void EditSupplier()
+    {
+        var res = _supplierService.UpdateItem(_mapper.Map<SupplierDto>(Model));
+
+        _notificationService.Notify(res);
+        if (res.Severity == NotificationSeverity.Success)
+        {
+            RefreshDataCallback.InvokeAsync(new object());
+            _dialogService.Close();
+        }
+    }
+}

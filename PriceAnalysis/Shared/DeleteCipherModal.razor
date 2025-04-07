@@ -1,0 +1,38 @@
+﻿@using PriceAnalysis.Models
+@using PriceAnalysis.BLL.Services
+@using AutoMapper
+@using PriceAnalysis.BLL.Models
+
+@inject DialogService _dialogService;
+@inject ISectionService _sectionService;
+@inject IMapper _mapper;
+@inject NotificationService _notificationService;
+
+<div>
+    <p>
+        Удаление раздела @Section.Name !
+    </p>
+</div>
+<br />
+<div class="">
+    <button @onclick="@DeleteSection" class="btn btn-success btn-sm">Удалить</button>
+</div>
+
+@code {
+
+    [Parameter] public SectionViewModel Section { get; set; }
+    [Parameter] public EventCallback RefreshDataCallback { get; set; }
+
+
+    void DeleteSection()
+    {
+        var res = _sectionService.DeleteItem(Section.Id);
+
+        _notificationService.Notify(res);
+        if (res.Severity == NotificationSeverity.Success)
+        {
+            RefreshDataCallback.InvokeAsync(new object());
+            _dialogService.Close();
+        }
+    }
+}

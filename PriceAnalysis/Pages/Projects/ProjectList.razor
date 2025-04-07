@@ -1,0 +1,222 @@
+﻿@page "/project-list"
+
+@using Blazored.FluentValidation
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using ModuleProjects.Application.Common.Extensions
+@using ModuleProjects.Application.Projects.Queries.GetAll
+@using ModuleProjects.Domain.Projects
+@using PriceAnalysis.Pages.Projects.Modal
+@using PriceAnalysis.Shared.Menu
+
+@inject NavigationManager _navManager
+@inject ProtectedSessionStorage _sessionStorage
+@inject ISender _mediator
+@inject DialogService _dialogService
+
+<PageTitle>Список объектов</PageTitle>
+
+<div class="app-main">
+
+    <!-- Menu -->
+    <NavMenu ViewMenu="false" />
+
+    <div class="app-main__outer col-12">
+        <div class="app-main__inner">
+            <div class="priceAnalysisMainHead ms-0">
+                <h3>Список объектов</h3>
+            </div>
+            
+            <div class="filter">
+                <ul class="nav col-12 col-lg-auto justify-content-left">
+                    <li>
+                        <button class="btn px-2 @(filter.Status == ProjectStatus.InWork ? "btn-light" : "btn-link")"
+                                @onclick="async () => { filter.Status = ProjectStatus.InWork; await FilterProjects(); }">
+                            Текущие
+                        </button>
+                    </li>
+                    <li>
+                        <button class="btn px-2 @(filter.Status == ProjectStatus.Finished ? "btn-light" : "btn-link" )"
+                                @onclick="async () => { filter.Status = ProjectStatus.Finished; await FilterProjects(); }">
+                            Оконченные
+                        </button>
+                    </li>
+                    <li>
+                        <button class="btn px-2 @(filter.Status == ProjectStatus.Canceled ? "btn-light" : "btn-link" )"
+                                @onclick="async () => { filter.Status = ProjectStatus.Canceled; await FilterProjects(); }">
+                            Анулированные
+                        </button>
+                    </li>
+                    <li>
+                        <a @onclick="InitProjectNewModal" class="btn btn-success mx-5">Создать новый <i class="bi bi-plus-square"></i></a>
+                    </li>
+                </ul><br />
+                <EditForm Model="@filter" OnValidSubmit="@FilterProjects">
+                    <div class="input-group">
+                        <InputNumber id="inpProjectId" @bind-Value="filter.Number" class="form-control" placeholder="Номер" />
+                        <InputText id="inpProjectManager" @bind-Value="filter.ProjectManager" class="form-control" placeholder="ГИП/ГАП" />
+                        <InputText id="inpProjectName" @bind-Value="filter.Name" class="form-control" placeholder="Название" />
+                        <InputText id="inpDisplayAddress" @bind-Value="filter.DisplayAddress" class="form-control" placeholder="Город" />
+                        <button type="submit" class="btn btn-primary">Поиск</button>
+                        <button type="submit" class="btn btn-link" @onclick="()=>filter = new GetAllProjectsRequest()">Сбросить</button>
+                    </div>
+                    <FluentValidationValidator />
+                    <ValidationSummary />
+                </EditForm>
+            </div>
+
+            @if (projects is null)
+            {
+                <br />
+                <p>Загрузка &hellip;</p>
+            }
+            else
+            {
+                <div class="mb-3 mt-5">
+                    <div class="text-end mb-2">
+                        <a class="fs-3 text-dark mx-1" @onclick="()=>ChangeShowType(false)"><i class="bi bi-grid"></i></a>
+                        <a class="fs-3 text-dark mx-1" @onclick="()=>ChangeShowType(true)"><i class="bi bi-table"></i></a>
+                    </div>
+
+                    @if (showTable)
+                    {
+                        <table class="table table-bordered table-hover w-100 bg-light">
+                            <thead>
+                                <tr>
+                                    <th>№</th>
+                                    <th>Название объекта</th>
+                                    <th>Город</th>
+                                    <th>ГИП/ГАП</th>
+                                    <th>Дата начала</th>
+                                    <th>Дата окончания</th>
+                                    <th>Статус</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if(!projects.Any())
+                                {
+                                    <tr>
+                                        <td colspan="100">Нет данных</td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    <Virtualize Items="@projects" Context="project" OverscanCount="10">
+                                        <ItemContent>
+                                            <tr @ondblclick="()=>ViewProject(project)">
+                                                <td> <a href="/project-passport/@project.Id">@project.Number</a></td>
+                                                <td>@project.Name</td>
+                                                <td>@project.DisplayAddress</td>
+                                                <td>@project.ProjectManager</td>
+                                                <td>@project.StartDate.ToShortDateString()</td>
+                                                <td>@project.EndDate?.ToShortDateString()</td>
+                                                <td>@project.Status.GetDescription()</td>
+                                            </tr>
+                                        </ItemContent>
+                                    </Virtualize>   
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        @if (!projects.Any())
+                        {
+                            <h5>Нет данных</h5>
+                        }
+                        else
+                        {
+                            <div class="row g-4">
+                                <Virtualize Items="@projects" Context="project" OverscanCount="10">
+                                    <ItemContent>
+                                        <div class="col-lg">
+                                            <div class="card h-100 bg-light" style="min-width: 18rem;" @ondblclick="()=>ViewProject(project)" title="Нажмите дважды, чтобы перейти в паспорт объекта">
+                                                @if (@project.ImageExt is not null)
+                                                {
+                                                    <img src="@($"/files/project/{project.Id}/image_orig{project.ImageExt}")" class="card-img-top" alt="">
+                                                }
+                                                <div class="card-body">
+                                                    <h5 class="card-title">@project.Name</h5>
+                                                    <h6 class="card-subtitle mb-2 text-muted">
+                                                        <span>@(project.DisplayAddress ?? "Адрес не указан")</span>
+                                                        <span class="float-end">#@project.Number</span>
+                                                    </h6>
+                                                    <p class="card-text">
+                                                        <span class="float-end">@project.StartDate.ToShortDateString() → @(project.EndDate?.ToShortDateString() ?? "...")</span><br />
+                                                        @(project.ProjectManager ?? "ГИП не указан")
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </ItemContent>
+                                </Virtualize>
+                            </div>
+                        }
+                    }
+                </div>
+               
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<ProjectListItem>? projects = null;
+    private GetAllProjectsRequest filter = new GetAllProjectsRequest();
+    private bool showTable = true;
+
+    private record ProjectsFilterState(
+        GetAllProjectsRequest Filter,
+        bool ShowTable = true);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadFilterState();
+        await FilterProjects();
+    }
+
+    private async Task LoadFilterState()
+    {
+        var projectsFilterState = await _sessionStorage.GetAsync<ProjectsFilterState>(nameof(ProjectsFilterState));
+
+        if (projectsFilterState.Success)
+        {
+            filter = projectsFilterState.Value?.Filter ?? new GetAllProjectsRequest();
+            showTable = projectsFilterState.Value?.ShowTable ?? true;
+        }
+    }
+
+    private async Task SaveFilterState()
+    {
+        await _sessionStorage.SetAsync(
+            key: nameof(ProjectsFilterState),
+            value: new ProjectsFilterState(
+                filter,
+                showTable));
+    }
+
+    private async Task FilterProjects()
+    {
+        projects = await _mediator.Send(filter);
+
+        await SaveFilterState();
+    }
+
+    private async Task ChangeShowType(bool flag)
+    {
+        showTable = flag;
+        await SaveFilterState();
+    }
+
+    private void ViewProject(ProjectListItem project)
+    {
+        _navManager.NavigateTo($"project-passport/{project.Id}");
+    }
+
+    private async Task InitProjectNewModal()
+    {
+        await _dialogService.OpenAsync(
+            "Новый объект",
+            ds =>@<ProjectNewModal /> ,
+            new DialogOptions { Height = "auto" });
+    }
+}

@@ -1,0 +1,127 @@
+﻿@using PriceAnalysis.Models
+@using AutoMapper
+@using PriceAnalysis.BLL.Services.Support
+@using PriceAnalysis.BLL.Models
+@using PriceAnalysis.BLL.Services
+
+@inject DialogService _dialogService;
+@inject IMapper _mapper;
+@inject NavigationManager _navigationManager;
+@inject ILoadDataFileService _loadDataFileService;
+@inject NotificationService _notificationService;
+@inject IAlertService _alertService;
+@inject ISupplierService _supplierService;
+
+<div class="">
+    <EditForm OnValidSubmit="DownLoadRequestKP" Model="Specifications" form>
+        <div class="row">
+            <DataAnnotationsValidator />
+
+            <div class="position-relative form-group col-md-3">
+                <label class="">Поставщик</label>
+
+                <InputText @bind-Value="valInputNameSupplier" @oninput="@(args => InputNameSupplier(args))" type="text"
+                           name="name" placeholder="Для поиска начните ввод" autocomplete="off" style="width: 100%;" class="form-control" />
+                <div class="@BlockSearchSupplier">
+                    @if (listSearchSupplier.Count == 0)
+                    {
+                        <p>Ничего не найдено..</p>
+                    }
+                    else
+                    {
+                        foreach (var item in listSearchSupplier)
+                        {
+                            <p @onclick="@( () => ClickItemSearchSupplier(item.Name, item.Id) )">
+                                @item.BeforeName<span style="color: red; font-weight: 600;">@item.SearchStr</span>@item.AfterName
+                            </p>
+                        }
+                    }
+                </div>
+
+                <div class="position-relative form-group col-md-1">
+                    <br />
+                    @if (selectedSupplierId != 0)
+                    {
+                        <button class="btn btn-sm btn-primary">Скачать запрос КП</button>
+                    }
+                </div>
+
+            </div>
+        </div>
+
+        <br />
+        <div class="alert alert-info" role="alert">
+            <i class="bi bi-info-circle-fill"></i>
+            Выберите поставщика для формирования запроса КП.
+        </div>
+    </EditForm>
+
+</div>
+
+@code {
+    [Parameter] public EventCallback RefreshDataCallback { get; set; }
+    [Parameter] public List<SpecificationViewModel> Specifications { get; set; }
+
+    string valInputNameSupplier;
+    List<SupplierViewModel> listSearchSupplier = new List<SupplierViewModel>();
+    string BlockSearchSupplier = " hide";
+    int selectedSupplierId = 0;
+
+    protected override void OnInitialized()
+    {
+
+    }
+
+    void InputNameSupplier(ChangeEventArgs arg)
+    {
+        string val = arg.Value.ToString();
+
+        if (val.Length > 2)
+        {
+            int i = 0;
+            listSearchSupplier = _mapper.Map<List<SupplierViewModel>>(_supplierService.GetListSearchSupplier(val).OrderBy(x => x.Name));
+            BlockSearchSupplier = " BlockSearchSupplier";
+            foreach (var item in listSearchSupplier)
+            {
+                int indexOfSubstring = item.Name.ToLower().IndexOf(val.ToLower());
+
+                listSearchSupplier[i].BeforeName = indexOfSubstring == 0 ? "" : item.Name.Substring(0, indexOfSubstring);
+                listSearchSupplier[i].AfterName = item.Name.Substring(indexOfSubstring + val.Length);
+                listSearchSupplier[i].SearchStr = item.Name.Substring(indexOfSubstring, val.Length);
+                i++;
+            }
+        }
+        else
+        {
+            BlockSearchSupplier = " hide";
+        }
+    }
+
+    void ClickItemSearchSupplier(string name, int id)
+    {
+        //model.SupplierId = id;
+        selectedSupplierId = id;
+        BlockSearchSupplier = " hide";
+        valInputNameSupplier = name;
+    }
+
+    public void DownLoadRequestKP()
+    {
+        var res = _loadDataFileService.DownloadFileRequestKP(
+            _mapper.Map<List<SpecificationDto>>(Specifications), selectedSupplierId);
+
+        if (res is not null)
+        {
+            selectedSupplierId = 0;
+            valInputNameSupplier = "";
+            RefreshDataCallback.InvokeAsync();
+            _dialogService.Close();
+            _navigationManager.NavigateTo(res, true);
+        }
+        else
+        {
+            _notificationService.Notify(_alertService.Get(54));
+            return;
+        }
+    }
+}

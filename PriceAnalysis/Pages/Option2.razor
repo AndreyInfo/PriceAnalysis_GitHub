@@ -1,0 +1,457 @@
+﻿@page "/option-2/{ProjectId:guid}"
+
+@using PriceAnalysis.Shared.Menu
+@using PriceAnalysis.BLL.Models
+@using PriceAnalysis.BLL.Services
+@using PriceAnalysis.Models
+@using AutoMapper
+@using PriceAnalysis.Shared.Suppliers
+
+@inject IMapper _mapper;
+@inject ISectionService _sectionService;
+@inject NavigationManager _navigationManager;
+@inject NotificationService _notificationService;
+@inject TooltipService _tooltipService;
+@inject ISupplierService _supplierService;
+@inject IKPFilesService _kpFilesService;
+@inject DialogService _dialogService;
+
+<PageTitle>Вариант 2 Загрузка КП поставщиков и формирование КАЦ</PageTitle>
+
+<div class="app-main">
+
+    <!-- Menu -->
+    <NavMenu ViewMenu="true" ProjectId="@ProjectId.ToString()" />
+
+    <div class="app-main__outer col-12">
+        <div class="app-main__inner">
+            <ProjectPassportMain ProjectId="@ProjectId" />
+
+            <div class="priceAnalysisMainHead">
+                <h3>Коньюктурный анализ цен (КАЦ)</h3>
+            </div>
+
+            <div class="row menuSteps">
+                <div class="">
+                    <button @onclick="@GoStep0" class="btn btnStep btn-secondary">Шаг 0</button>
+                    <button @onclick="@GoStep1" class="btn btnStep btn-secondary">Шаг 1</button>
+                    <button @onclick="@GoStep2" class="btn btnStep btn-secondary">Шаг 2</button>
+                    <button @onclick="@GoStep3" class="btn btnStep btn-primary">Шаг 3</button>
+                    <button @onclick="@Exit" class="btn btn-secondary btnStep">Выход из подготовки КАЦ</button>
+                </div>
+            </div>
+
+            <div class="createListCiphers">
+                <div class="row priceAnalysisMainHeadStep">
+                    <h5 class="col-md-10"> Вариант 2 Загрузка КП поставщиков и формирование КАЦ </h5>
+                </div>
+
+                <div class="row priceAnalysisBlockCreateList">
+                    <p class ="col-md-6">Шаг 1 Загрузка КП</p>
+                    <div class="col-md-6">
+                        <button @onclick="@GoOption2Step2" type="button" class="btn btn-sm btn-secondary" style="width:260px;">
+                            Перейти к шагу 2 <br \> Синхронизация КП и спецификации
+                        </button>
+                    </div>
+                </div>
+                <br />
+
+                @if (showBlockSection)
+                {
+                    <div class="row">
+                        <div class="main-card mb-3 card">
+                            <div class="card-body">
+                                <div>
+                                    <span class="cipherHead">Разделы:</span>
+                                </div>
+                                <div class="ciphers">
+                                    @foreach (var item in sections)
+                                    {
+                                        <span @onclick="@(() => ChangeSection(item.Id))" class="cipher @item.CreateListCiphersClass">@item.Name</span>
+                                        if (sections.Count > 5 && !showSections)
+                                        {
+                                            <span @onclick="ShowSection" class="showSection">...</span>
+                                            break;
+                                        }
+                                    }
+                                    @if (sections.Count > 5 && showSections)
+                                    {
+                                        <span @onclick="HideSection" class="showSection">&lt;&lt;</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <div class="row">
+                    <div class="main-card mb-3 card">
+                        <div class="card-body">
+                            <div>
+                                <p>@currentSection.Name</p>
+                            </div>
+
+                            <RadzenDataGrid AllowSorting="true" Data="@kpFilesList" TItem="KPFilesViewModel" Style="width: auto;" AllowColumnResize="true" PageSize="5" AllowPaging="true">
+                                <Columns>
+                                    <RadzenDataGridColumn TItem="KPFilesViewModel" Title="Действия" Width="80px" TextAlign="TextAlign.Center" Sortable="false">
+                                        <Template Context="data">
+                                            <RadzenLabel MouseEnter="@(args => ShowTooltip(args, "Скачать файл") )"
+                                                         @onclick="@(() => DownloadFileKP(data.Id))" class="bi bi-cloud-download-fill btnDownload" />
+                                            <RadzenLabel MouseEnter="@(args => ShowTooltip(args, "Удалить файл") )"
+                                                         @onclick="@(() => DeleteFileKP(data.Id))" class="bi bi-trash btnClear" />
+                                        </Template>
+                                    </RadzenDataGridColumn>
+
+                                    <RadzenDataGridColumn TItem="KPFilesViewModel" Title="#" Width="80px" TextAlign="TextAlign.Center" Sortable="false">
+                                        <Template Context="data">
+                                            <span>КП №@data.Number</span>
+                                        </Template>
+                                    </RadzenDataGridColumn>
+
+                                    <RadzenDataGridColumn TItem="KPFilesViewModel" Property="SupplierName" Width="250px" TextAlign="TextAlign.Left">
+                                        <HeaderTemplate>
+                                            <span>Поставщик</span>
+                                        </HeaderTemplate>
+                                    </RadzenDataGridColumn>
+
+                                    <RadzenDataGridColumn TItem="KPFilesViewModel" Title="Файл Pdf" Width="120px" TextAlign="TextAlign.Center">
+                                        <Template Context="data">
+                                            @if (data.DocFilesIdPdf is not null)
+                                            {
+                                                <span>+</span>
+                                            }
+                                        </Template>
+                                    </RadzenDataGridColumn>
+
+                                    <RadzenDataGridColumn TItem="KPFilesViewModel" Title="Файл Excel" Width="120px" TextAlign="TextAlign.Center">
+                                        <Template Context="data">
+                                            @if (data.DocFilesIdExcel is not null)
+                                            {
+                                                <span>+</span>
+                                            }
+                                        </Template>
+                                    </RadzenDataGridColumn>
+
+                                    <RadzenDataGridColumn TItem="KPFilesViewModel" Property="Notice" TextAlign="TextAlign.Left">
+                                        <HeaderTemplate>
+                                            <span>Примечание</span>
+                                        </HeaderTemplate>
+                                    </RadzenDataGridColumn>
+
+                                </Columns>
+                            </RadzenDataGrid>
+
+                            <br />
+                            <div class="alert alert-info" role="alert">
+                                <i class="bi bi-info-circle-fill"></i>
+                                Файлы КП скачиваются zip-архивом.
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="main-card mb-3 card">
+                        <div class="card-body">
+                            <div>
+                                <p>Загрузить КП к разделу</p>
+                            </div>
+                            <EditForm OnValidSubmit="LoadKPFile" Model="model" form>
+                                <div class="row">
+                                    <DataAnnotationsValidator />
+
+                                    <div class="position-relative form-group col-md-3">
+                                        <label class="">Поставщик</label>
+                                        @*<InputSelect @bind-Value="model.SupplierId" class="form-control">
+                                            @foreach (var item in suppliers)
+                                            {
+                                                <option value="@item.Id">@item.Name</option>
+                                            }
+                                        </InputSelect>*@
+
+                                        <InputText @bind-Value="valInputNameSupplier" @oninput="@(args => InputNameSupplier(args))" type="text"
+                                                   name="name" placeholder="Для поиска начните ввод" autocomplete="off" style="width: 100%;" class="form-control" />
+                                        <div class="@BlockSearchSupplier">
+                                            @if (listSearchSupplier.Count == 0)
+                                            {
+                                                <p>Ничего не найдено..</p>
+                                            }
+                                            else
+                                            {
+                                                foreach (var item in listSearchSupplier)
+                                                {
+                                                    <p @onclick="@( () => ClickItemSearchSupplier(item.Name, item.Id) )">
+                                                        @item.BeforeName<span style="color: red; font-weight: 600;">@item.SearchStr</span>@item.AfterName
+                                                    </p>
+                                                }
+                                            }
+                                        </div>
+
+                                    </div>
+
+                                    <div class="position-relative form-group col-md-2">
+                                        <label class="">Примечание</label>
+                                        <br />
+                                        <InputText @bind-Value="model.Notice" class="form-control" />
+                                        <ValidationMessage For="(() => model.Notice)" />
+                                    </div>
+                                    <div class="position-relative form-group col-md-2">
+                                        <label class="">Файл для загрузки</label>
+                                        <br />
+                                        <BlazorInputFile.InputFile OnChange="@(files => SaveFileTmp(files))" MaxBufferSize="6000000" class="btn btn-primary btn-sm btnLoadSpecificationFromExcel" />
+                                    </div>
+                                    <div class="position-relative form-group col-md-1">
+                                        <br />
+                                        @if (!string.IsNullOrEmpty(nameSaveFileKP) && model.SupplierId != 0)
+                                        {
+                                            <button class="btn btn-sm btn-primary">Загрузить</button>
+                                        }
+                                    </div>
+
+                                    <div class="position-relative form-group col-md-3" style="margin-left: 15px;">
+                                        <br />
+                                        <span>@nameSaveFileKP</span>
+                                    </div>
+                                    
+                                </div>
+                                
+                                <br />
+                                <div class="alert alert-info" role="alert">
+                                    <i class="bi bi-info-circle-fill"></i>
+                                    К загрузке допускаются только файлы PDF и Excel.
+                                </div>
+                            </EditForm>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="main-card mb-3 card">
+                        <div class="card-body">
+                            <div class="">
+                                <button @onclick="@InitCreateSupplierModal" class="btn btn-sm btn-primary">Добавить поставщика</button>
+                            </div>
+                            <br />
+                            <div class="alert alert-info" role="alert">
+                                <i class="bi bi-info-circle-fill"></i>
+                                Для всех возможностей управления поставщиками необходимо перейти к Справочнику поставщиков.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public Guid ProjectId { get; set; }
+
+    protected override void OnInitialized()
+    {
+        //GetSuppliers();
+        suppliers = _mapper.Map<List<SupplierViewModel>>(_supplierService.GetList().OrderBy(x => x.Name));
+        sections = _mapper.Map<List<SectionViewModel>>(_sectionService.GetList()
+            .Where(x => x.ProjectId == ProjectId)).OrderBy(x => x.Id).ToList();
+
+        currentSection = sections[0];
+        currentSection.CreateListCiphersClass = "activeCipher";
+
+        GetKPList();
+    }
+
+    List<SectionViewModel> sections;
+    bool showBlockSection = true;
+    SectionViewModel currentSection;
+    bool showSections = false;
+    List<SupplierViewModel> suppliers;
+    KPFilesViewModel model = new KPFilesViewModel();
+    IFileListEntry saveFileKPTmp;
+    string nameSaveFileKP = "";
+    List<KPFilesViewModel> kpFilesList;
+    string valInputNameSupplier;
+    string BlockSearchSupplier = " hide";
+    List<SupplierViewModel> listSearchSupplier = new List<SupplierViewModel>();
+
+    void Exit()
+    {
+        _navigationManager.NavigateTo("project-passport/" + ProjectId, true);
+    }
+
+    public void RefreshData()
+    {
+        sections = _mapper.Map<List<SectionViewModel>>(_sectionService.GetList()
+            .Where(x => x.ProjectId == ProjectId)).OrderBy(x => x.Id).ToList();
+
+
+        currentSection = sections[0];
+        currentSection.CreateListCiphersClass = "activeCipher";
+        showSections = false;
+
+        GetKPList();
+        RefreshBlockLoad();
+    }
+
+    void RefreshBlockLoad()
+    {
+        nameSaveFileKP = "";
+        model = new KPFilesViewModel();
+        saveFileKPTmp = null;
+        valInputNameSupplier = null;
+        BlockSearchSupplier = " hide";
+    }
+
+    void GetSuppliers()
+    {
+        suppliers = _mapper.Map<List<SupplierViewModel>>(_supplierService.GetList().OrderBy(x => x.Name));
+        model.SupplierId = suppliers.OrderBy(x => x.Id).Last().Id;
+        valInputNameSupplier = suppliers.OrderBy(x => x.Id).Last().Name;
+    }
+
+    void InputNameSupplier(ChangeEventArgs arg)
+    {
+        string val = arg.Value.ToString();
+
+        if (val.Length > 2)
+        {
+            int i = 0;
+            listSearchSupplier = _mapper.Map<List<SupplierViewModel>>(_supplierService.GetListSearchSupplier(val).OrderBy(x => x.Name));
+            BlockSearchSupplier = " BlockSearchSupplier";
+            foreach (var item in listSearchSupplier)
+            {
+                int indexOfSubstring = item.Name.ToLower().IndexOf(val.ToLower());
+
+                listSearchSupplier[i].BeforeName = indexOfSubstring == 0 ? "" : item.Name.Substring(0, indexOfSubstring);
+                listSearchSupplier[i].AfterName = item.Name.Substring(indexOfSubstring + val.Length);
+                listSearchSupplier[i].SearchStr = item.Name.Substring(indexOfSubstring, val.Length);
+                i++;
+            }
+        }
+        else
+        {
+            BlockSearchSupplier = " hide";
+        }
+    }
+
+    void ClickItemSearchSupplier(string name, int id)
+    {
+        model.SupplierId = id;
+        BlockSearchSupplier = " hide";
+        valInputNameSupplier = name;
+    }
+
+    void GetKPList()
+    {
+        kpFilesList = _mapper.Map<List<KPFilesViewModel>>(_kpFilesService.GetList()
+            .Where(x => x.SectionId == currentSection.Id)).ToList();
+
+        int i = 0;
+        foreach (var item in kpFilesList)
+        {
+            i++;
+            item.Number = i;
+        }
+    }
+
+    void ShowSection()
+    {
+        showSections = !showSections;
+    }
+
+    void HideSection()
+    {
+        RefreshData();
+    }
+
+    void ChangeSection(int Id)
+    {
+        currentSection.CreateListCiphersClass = "";
+        currentSection = sections.Where(x => x.Id == Id).First();
+        currentSection.CreateListCiphersClass = "activeCipher";
+
+        RefreshBlockLoad();
+        GetKPList();
+    }
+
+    void SaveFileTmp(IFileListEntry[] files)
+    {
+        IFileListEntry file = files.FirstOrDefault();
+        nameSaveFileKP = file.Name;
+        saveFileKPTmp = file;
+    }
+
+    async Task LoadKPFile()
+    {
+        model.SectionId = currentSection.Id;
+        model.File = saveFileKPTmp;
+        var res = await _kpFilesService.UploadKPFile(_mapper.Map<KPFilesDto>(model));
+
+        _notificationService.Notify(res);
+        if (res.Severity == NotificationSeverity.Success)
+        {
+            RefreshBlockLoad();
+            GetKPList();
+        }
+    }
+
+    void DownloadFileKP(int kpFileId)
+    {
+        var res = _kpFilesService.DownloadFilesKP(kpFileId);
+
+        if (res.Item1.Severity == NotificationSeverity.Success)
+        {
+            _navigationManager.NavigateTo(res.Item2, true);
+        }
+        else
+        {
+            _notificationService.Notify(res.Item1);
+            return;
+        }
+    }
+
+    void DeleteFileKP(int kpFileId)
+    {
+        var res = _kpFilesService.DeleteFileKP(kpFileId);
+
+        _notificationService.Notify(res);
+        if (res.Severity == NotificationSeverity.Success)
+        {
+            GetKPList();
+        }
+    }
+
+    async Task InitCreateSupplierModal()
+    {
+        var result = await _dialogService.OpenAsync("Добавление поставщика!", ds =>
+        @<CreateSupplierModal RefreshDataCallback="GetSuppliers" />, new DialogOptions { Height = "auto" });
+    }
+
+    void ShowTooltip(ElementReference elementReference, string text, TooltipOptions options = null)
+    => _tooltipService.Open(elementReference, text, options);
+
+    void GoStep0()
+    {
+        _navigationManager.NavigateTo("cleate-list-ciphers/" + ProjectId + "/" + 0, true);
+    }
+
+    void GoStep1()
+    {
+        _navigationManager.NavigateTo("cleate-list-ciphers/" + ProjectId + "/" + 1, true);
+    }
+
+    void GoStep2()
+    {
+        _navigationManager.NavigateTo("cleate-list-ciphers/" + ProjectId + "/" + 2, true);
+    }
+
+    void GoStep3()
+    {
+        _navigationManager.NavigateTo("cleate-list-ciphers/" + ProjectId + "/" + 3, true);
+    }
+
+    void GoOption2Step2()
+    {
+        _navigationManager.NavigateTo("option-2-step-2/" + ProjectId, true);
+    }
+}

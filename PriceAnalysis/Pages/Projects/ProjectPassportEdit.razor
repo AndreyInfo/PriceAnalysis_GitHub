@@ -1,0 +1,462 @@
+﻿@page "/project-passport-edit/{ProjectId:guid}"
+
+@using AutoMapper;
+@using Blazored.FluentValidation
+@using ModuleProjects.Application.Common.Extensions
+@using ModuleProjects.Application.Common.FileStorage
+@using ModuleProjects.Application.Companies.GetAll
+@using ModuleProjects.Application.Geo
+@using ModuleProjects.Application.Projects.Queries.GetById
+@using ModuleProjects.Application.Projects.Commands.Update
+@using ModuleProjects.Application.Users.GetAll
+@using ModuleProjects.Domain.Common.Enums
+@using ModuleProjects.Domain.Companies
+@using ModuleProjects.Domain.Projects
+@using ModuleProjects.Domain.Users
+@using PriceAnalysis.Common
+@using PriceAnalysis.Pages.Projects.Modal
+@using PriceAnalysis.Shared.Menu
+
+@inject NavigationManager _navManager
+@inject ISender _mediator
+@inject IMapper _mapper
+@inject NotificationService _notificationService
+@inject DialogService _dialogService
+
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+<PageTitle>Редактирование паспорта объекта #@project?.Number</PageTitle>
+
+
+<div class="app-main">
+
+    <!-- Menu -->
+    <NavMenu ViewMenu="true" ProjectId="@ProjectId.ToString()" />
+
+    <div class="app-main__outer col-12">
+        <div class="app-main__inner">
+            @if (updateProjectCommand is null)
+            {
+                <p>Загрузка &hellip;</p>
+            }
+            else
+            {
+                <EditForm Model="@updateProjectCommand" OnValidSubmit="@SaveDataAsync">
+
+                    <div class="projectPassportMain h5">
+                        <span class="projectPassportNumber">Объект №@project?.Number:</span>
+                        <span class="projectPassportFullName">
+                            <InputText class="form-control" id="inpName" @bind-Value="updateProjectCommand.Name" />
+                            <ValidationMessage For="@(() => updateProjectCommand.Name)" />
+                        </span>
+                    </div>
+
+                    <div class="clearfix">
+                        <div class="priceAnalysisMainHead float-start">
+                            <h3>Паспорт объекта</h3>
+                        </div>
+                        <div class="text-end">
+                            <a class="btn btn-default m-3" @onclick="GotoProjectPassportPage">Назад</a>
+                            <button type="submit" class="btn btn-primary m-3" disabled="@isDisabled">Сохранить</button>
+                        </div>
+                   </div>
+
+                    <div class="row">
+                        <div class="col-lg-4">
+                            <div class="card mb-4 rounded-3 shadow-sm mh435">
+                                <div class="card-header">
+                                    <p class="my-0 fw-normal">Описание</p>
+                                </div>
+
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label for="fileImage" class="form-label">Фотография объекта</label>
+                                        <Microsoft.AspNetCore.Components.Forms.InputFile id="fileImage" class="form-control" OnChange="@OnChangeFile" accept="@(FileType.Image.GetDescription())" />
+                                        <ValidationMessage For="@(() => updateProjectCommand.Image)" />
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="inpDescription" class="form-label">Описание</label>
+                                        <InputTextArea class="form-control" id="inpDescription" rows="5" @bind-Value="updateProjectCommand.Description" />
+                                        <ValidationMessage For="@(() => updateProjectCommand.Description)" />
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="inpStartDate" class="form-label">Дата начала</label>
+                                        <InputDate class="form-control" id="inpStartDate" @bind-Value="updateProjectCommand.StartDate" />
+                                        <ValidationMessage For="@(() => updateProjectCommand.StartDate)" />
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="inpEndDate" class="form-label">Дата окончания</label>
+                                        <InputDate class="form-control" id="inpEndDate" @bind-Value="updateProjectCommand.EndDate" />
+                                        <ValidationMessage For="@(() => updateProjectCommand.EndDate)" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-4">
+                            <div class="card mb-4 shadow-sm mh435">
+                                <div class="card-header">
+                                    <p class="my-0 fw-normal">Параметры</p>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label for="inpStage" class="form-label">Стадия</label>
+                                        <InputSelect id="inpStage" class="form-control" @bind-Value="updateProjectCommand.Stage">
+                                            @foreach (var item in Enum.GetValues(typeof(ProjectStage)).Cast<ProjectStage>().ToList())
+                                            {
+                                                <option value="@((int)item)">@item</option>
+                                            }
+                                        </InputSelect>
+                                        <ValidationMessage For="@(() => updateProjectCommand.Stage)" />
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="inpSmetDistrictNumber" class="form-label">Сметная база</label>
+                                        <InputSelect id="inpSmetDistrictNumber" class="form-control" @bind-Value="updateProjectCommand.SmetDistrictNumber">
+                                            <option />
+                                            @foreach (var item in Enum.GetValues(typeof(SNBType)).Cast<SNBType>().ToList())
+                                            {
+                                                <option value="@((int)item)">@item</option>
+                                            }
+                                        </InputSelect>
+                                        <ValidationMessage For="@(() => updateProjectCommand.SmetDistrictNumber)" />
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="inpEstimateCalculationType" class="form-label">Метод сметного расчета</label>
+                                        <InputSelect id="inpEstimateCalculationType" class="form-control" @bind-Value="updateProjectCommand.EstimateCalculationType">
+                                            <option />
+                                        </InputSelect>
+                                        <ValidationMessage For="@(() => updateProjectCommand.EstimateCalculationType)" />
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="inpStatus" class="form-label">Статус</label>
+                                        <InputSelect id="inpStatus" class="form-control" @bind-Value="updateProjectCommand.Status">
+                                            @foreach (var item in Enum.GetValues(typeof(ProjectStatus)).Cast<ProjectStatus>().ToList())
+                                            {
+                                                <option value="@((int)item)">@item.GetDescription()</option>
+                                            }
+                                        </InputSelect>
+                                        <ValidationMessage For="@(() => updateProjectCommand.Status)" />
+                                    </div>
+
+                                    @* <div class="mb-3">
+                                        <label for="inpCurrencyCode" class="form-label">Валюта расчетов</label>
+                                        <InputSelect id="inpCurrencyCode" class="form-control" @bind-Value="updateProjectCommand.CurrencyCode">
+                                        <option>RUB</option>
+                                        </InputSelect>
+                                        <ValidationMessage For="@(() => updateProjectCommand.CurrencyCode)" />
+                                    </div> *@
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-4">
+                            <div class="card mb-4 rounded-3 shadow-sm mh435">
+                                <div class="card-header">
+                                    <p class="my-0 fw-normal">Расположение объекта</p>
+                                </div>
+                                <div id="dMap">
+                                    <p class="text-center">Загрузка карты&hellip;</p>
+                                </div>
+                                <div class="card-body">
+                                    <label for="inpAddress" class="form-label">Адрес объекта</label>
+                                    <div class="col">
+                                        <InputTextArea class="form-control" id="inpAddress" @bind-Value="updateProjectCommand.Address" rows="2" />
+                                        <ValidationMessage For="@(() => updateProjectCommand.Address)" />
+                                        <a @onclick="SearchGeoAsync" class="btn btn-primary my-1">Найти на карте</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mb-4 rounded-3 shadow-sm">
+                        <div class="card-header">
+                            <p class="my-0 fw-normal">Участники</p>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="mb-3 col-lg">
+                                    <label for="inpCustomer" class="form-label">Заказчик</label>
+                                    <InputSelect id="inpCustomer" class="form-control" @bind-Value="updateProjectCommand.CustomerId">
+                                        <option value="">Не указан</option>
+                                        @foreach (var item in projectCompanies)
+                                        {
+                                            <option value="@item.Id">@item.Name</option>
+                                        }
+                                    </InputSelect>
+                                    <ValidationMessage For="@(() => updateProjectCommand.CustomerId)" />
+                                </div>
+                                <div class="mb-3 col-lg">
+                                    <label for="inpProjectResponsibleUser" class="form-label">Ответственный за проект</label>
+                                    <InputSelect id="inpProjectResponsibleUser" class="form-control" @bind-Value="updateProjectCommand.ProjectResponsibleUserId">
+                                        <option value="">Не указан</option>
+                                        @foreach (var item in projectUsers)
+                                        {
+                                            <option value="@item.Id">@item.FullName</option>
+                                        }
+                                    </InputSelect>
+                                    <ValidationMessage For="@(() => updateProjectCommand.ProjectResponsibleUserId)" />
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="mb-3 col-lg">
+                                    <label for="inpGeneralDesigner" class="form-label">Генеральный проектировщик</label>
+                                    <InputSelect id="inpGeneralDesigner" class="form-control" @bind-Value="updateProjectCommand.GeneralDesignerId">
+                                        <option value="">Не указан</option>
+                                        @foreach (var item in projectCompanies)
+                                        {
+                                            <option value="@item.Id">@item.Name</option>
+                                        }
+                                    </InputSelect>
+                                    <ValidationMessage For="@(() => updateProjectCommand.GeneralDesignerId)" />
+                                </div>
+                                <div class="mb-3 col-lg">
+                                    <label for="inpProjectManager" class="form-label">ГАП / ГИП</label>
+                                    <InputSelect id="inpProjectManager" class="form-control" @bind-Value="updateProjectCommand.ProjectManagerId">
+                                        <option value="">Не указан</option>
+                                        @foreach (var item in projectUsers)
+                                        {
+                                            <option value="@item.Id">@item.FullName</option>
+                                        }
+                                    </InputSelect>
+                                    <ValidationMessage For="@(() => updateProjectCommand.ProjectManagerId)" />
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="mb-3 col-lg">
+                                    <label for="inpGeneralContractor" class="form-label">Генеральный подрядчик</label>
+                                    <InputSelect id="inpGeneralContractor" class="form-control" @bind-Value="updateProjectCommand.GeneralContractorId">
+                                        <option value="">Не указан</option>
+                                        @foreach (var item in projectCompanies)
+                                        {
+                                            <option value="@item.Id">@item.Name</option>
+                                        }
+                                    </InputSelect>
+                                    <ValidationMessage For="@(() => updateProjectCommand.GeneralContractorId)" />
+                                </div>
+                                <div class="mb-3 col-lg">
+                                    <label for="inpObjectResponsibleUser" class="form-label">Ответсвенный за объект</label>
+                                    <InputSelect id="inpObjectResponsibleUser" class="form-control" @bind-Value="updateProjectCommand.ObjectResponsibleUserId">
+                                        <option value="">Не указан</option>
+                                        @foreach (var item in projectUsers)
+                                        {
+                                            <option value="@item.Id">@item.FullName</option>
+                                        }
+                                    </InputSelect>
+                                    <ValidationMessage For="@(() => updateProjectCommand.ObjectResponsibleUserId)" />
+                                </div>
+                            </div>
+
+                            @if (updateProjectCommand.Subcontractors is not null)
+                            {
+                                var i = 0;
+                                foreach (var item in updateProjectCommand.Subcontractors)
+                                {
+                                    ++i;
+                                    <div class="row">
+                                        <div class="mb-3 col">
+                                            <label class="form-label">Субподрядчик @i</label>
+                                            <p>
+                                                @(projectCompanies.FirstOrDefault(c => c.Id.Equals(item.SubcontractorId))?.Name ?? "Не указан")
+                                            </p>
+                                        </div>
+                                        <div class="mb-3 col">
+                                            <label class="form-label">Ответсвенный за проект @i</label>
+                                            <p>
+                                                @(projectUsers.FirstOrDefault(c => c.Id.Equals(item.ProjectResponsibleUserId))?.FullName ?? "Не указан")
+                                            </p>
+                                        </div>
+                                        <div class="col">
+                                            <a class="btn btn-danger" @onclick="() => DeleteSubcontractor(item)">Удалить</a>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            <div class="mb-3">
+                                <a class="btn btn-primary m-3" @onclick="InitProjectAddSubcontractorModal">Добавить субподрядчика</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <FluentValidationValidator />
+                    <ValidationSummary />
+                </EditForm>
+            }
+        </div>
+    </div>
+</div>
+
+
+
+@code {
+    [Parameter]
+    public Guid ProjectId { get; set; }
+    private Project? project = null;
+    private UpdateProjectCommand? updateProjectCommand = null;
+    private IReadOnlyList<Company> projectCompanies = new List<Company>();
+    private IReadOnlyList<User> projectUsers = new List<User>();
+    private const long maxFileSize = 1024 * 1024 * 10; // = 10MB
+    private bool isDisabled = false;
+
+    //for javascript
+    private IJSObjectReference? jsModule;
+    private DotNetObjectReference<ProjectPassportEdit>? objRef;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var usersResult = await _mediator.Send(new GetAllUsersRequest());
+        if (usersResult is not null)
+        {
+            projectUsers = usersResult.Items;
+        }
+
+        var companiesResult = await _mediator.Send(new GetAllCompaniesRequest());
+        if (companiesResult is not null)
+        {
+            projectCompanies = companiesResult.Items;
+        }
+
+        var projectResult = await _mediator.Send(new GetProjectByIdRequest(ProjectId));
+        if (projectResult is not null)
+        {
+            project = projectResult.Project;
+            updateProjectCommand = _mapper.Map<UpdateProjectCommand>(project);
+
+            if (updateProjectCommand is not null)
+            {
+                await InvokeAsync(StateHasChanged); //обновляем состояние страницы для JS
+
+                //import js
+                objRef = DotNetObjectReference.Create(this);
+                jsModule = await JS.InvokeAsync<IJSObjectReference>("import", PathsHelper.GetRazorJsPath(GetType()));
+                await jsModule.InvokeVoidAsync("OpenStreetMapHelper.Init", objRef, "dMap");
+                await jsModule.InvokeVoidAsync("OpenStreetMapHelper.ShowMap", updateProjectCommand.GeoLat, updateProjectCommand.GeoLng, updateProjectCommand.GeoZoom);
+            }
+        }
+    }
+
+    private async Task InitProjectAddSubcontractorModal()
+    {
+        await _dialogService.OpenAsync(
+            "Добавить субподрядчика",
+            ds => 
+                @<ProjectAddSubcontractorModal 
+                        ProjectCompanies="projectCompanies" 
+                        ProjectUsers="projectUsers" 
+                        RefreshDataCallback="AddSubcontractor"/>, 
+            new DialogOptions { Height = "auto" });
+    }
+
+    private void AddSubcontractor(ProjectSubcontractorItem subcontractorItem)
+    {
+        if (updateProjectCommand is null
+            || subcontractorItem.SubcontractorId == Guid.Empty
+            || (updateProjectCommand.Subcontractors is not null
+                && updateProjectCommand.Subcontractors.Any(s => s.SubcontractorId == subcontractorItem.SubcontractorId)))
+        {
+            return;
+        }
+
+        if (updateProjectCommand.Subcontractors is null)
+        {
+            updateProjectCommand.Subcontractors = new();
+        }
+
+        updateProjectCommand.Subcontractors.Add(
+            new ProjectSubcontractorItem()
+                {
+                    SubcontractorId = subcontractorItem.SubcontractorId,
+                    ProjectResponsibleUserId = subcontractorItem.ProjectResponsibleUserId
+                });
+    }
+
+    private void DeleteSubcontractor(ProjectSubcontractorItem subcontractor)
+    {
+        updateProjectCommand!.Subcontractors!.Remove(subcontractor);
+    }
+
+    private async Task SaveDataAsync()
+    {
+        isDisabled = true;
+
+        var result = await _mediator.Send(updateProjectCommand!);
+
+        if (result is not null)
+        {
+            GotoProjectPassportPage();
+        }
+
+        isDisabled = false;
+    }
+
+    private void GotoProjectPassportPage()
+    {
+        updateProjectCommand = null;
+        _navManager.NavigateTo($"/project-passport/{ProjectId}");
+    }
+
+    private void OnChangeFile(InputFileChangeEventArgs e)
+    {
+        isDisabled = true;
+
+        updateProjectCommand!.Image = new FileUploadRequest(
+            browserFile: e.File,
+            fileName: "image_orig" + Path.GetExtension(e.File.Name),
+            maxFileSize: maxFileSize);
+
+        isDisabled = false;
+
+        return;
+    }
+
+    private async Task SearchGeoAsync()
+    {
+        if (string.IsNullOrWhiteSpace(updateProjectCommand?.Address))
+            return;
+
+        var result = await _mediator.Send(new GetGeoPositionRequest(updateProjectCommand.Address));
+
+        if (result is null)
+        {
+            //await JS.InvokeVoidAsync("alert", "Адрес не найден");
+            _notificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Координаты по адресу не найдены",
+                    Detail = "Выберите место вручную"
+                });
+
+        }
+        else
+        {
+            (updateProjectCommand.GeoLat, updateProjectCommand.GeoLng) = (result.Lat, result.Lon);
+            await jsModule!.InvokeVoidAsync("OpenStreetMapHelper.ShowMap", updateProjectCommand.GeoLat, updateProjectCommand.GeoLng, updateProjectCommand.GeoZoom);
+        }
+    }
+
+    [JSInvokable]
+    public Task UpdateGeoLatLngAsync(double? lat, double? lng) =>
+        Task.FromResult(
+            (updateProjectCommand!.GeoLat, updateProjectCommand!.GeoLng) = (lat, lng)
+        );
+
+    [JSInvokable]
+    public Task UpdateGeoZoomAsync(int? zoom) =>
+        Task.FromResult(updateProjectCommand!.GeoZoom = zoom);
+
+    public async ValueTask DisposeAsync()
+    {
+        if (jsModule is not null)
+        {
+            await jsModule.DisposeAsync();
+        }
+        objRef?.Dispose();
+    }
+}

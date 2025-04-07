@@ -1,0 +1,53 @@
+﻿@using PriceAnalysis.BLL.Services
+
+@inject DialogService _dialogService;
+@inject ISpecificationService _specificationService;
+
+<div class="">
+    <EditForm OnValidSubmit="Save" Model="selectedList" form>
+        <div class="row">
+            <div class="col-md-12">
+                <DataAnnotationsValidator />
+
+                <div class="position-relative form-group">
+                    <label for="Name">Производители</label>
+                    <br />
+                    <RadzenDropDown @bind-Value=@selectedList Data=@manufacturerList 
+                                    Multiple=true AllowClear=true Placeholder="Выберите производителей..." 
+                                    Style="width: 100%; max-width: 400px;" />
+                </div>
+            </div>
+        </div>
+        <br />
+        <div class="">
+            <button class="btn btn-sm btn-primary">Сохранить</button>
+        </div>
+    </EditForm>
+
+</div>
+
+@code {
+    [Parameter] public EventCallback<List<string>> RefreshDataCallback { get; set; }
+    [Parameter] public int SectionId { get; set; }
+
+    protected override void OnInitialized()
+    {
+        var specifications = _specificationService.GetList().Where(x => x.SectionId == SectionId);
+
+        var manufacturers = from n in specifications
+                select n.Manufacturer;
+
+        manufacturerList = manufacturers.Distinct().ToList();
+
+        selectedList = new List<string>();
+    }
+
+    List<string> manufacturerList;
+    List<string> selectedList;
+
+    private void Save()
+    {
+        RefreshDataCallback.InvokeAsync(selectedList);
+        _dialogService.Close();
+    }
+}

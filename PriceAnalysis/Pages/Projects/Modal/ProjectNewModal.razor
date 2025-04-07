@@ -1,0 +1,82 @@
+﻿@using Blazored.FluentValidation
+@using ModuleProjects.Application.Projects.Commands.Create
+@using ModuleProjects.Domain.Projects
+
+@inject ISender _mediator
+@inject DialogService _dialogService
+@inject NavigationManager _navManager
+
+<div>
+    @if (createProjectCommand is null)
+    {
+        <p>Загрузка &hellip;</p>
+    }
+    else
+    {
+        <EditForm Model="@createProjectCommand" OnValidSubmit="@SaveDataAsync">
+            <div class="mb-3">
+                <label for="inpName" class="form-label">Название объекта</label>
+                <InputText class="form-control" id="inpName" @bind-Value="createProjectCommand.Name" />
+                <ValidationMessage For="@(() => createProjectCommand.Name)" />
+            </div>
+            <div class="mb-3">
+                <label for="inpDescription" class="form-label">Описание</label>
+                <InputTextArea class="form-control" id="inpDescription" @bind-Value="createProjectCommand.Description" />
+                <ValidationMessage For="@(() => createProjectCommand.Description)" />
+            </div>
+            <div class="mb-3">
+                <label for="inpAddress" class="form-label">Адрес объекта</label>
+                <InputText class="form-control" id="inpAddress" @bind-Value="createProjectCommand.Address" />
+                <ValidationMessage For="@(() => createProjectCommand.Address)" />
+            </div>
+            <div class="mb-3">
+                <label for="inpStage" class="form-label">Стадия</label>
+                <InputSelect id="inpStage" class="form-control" @bind-Value="createProjectCommand.Stage">
+                    @foreach (var item in Enum.GetValues(typeof(ProjectStage)).Cast<ProjectStage>().ToList())
+                    {
+                        <option value="@((int)item)">@item</option>
+                    }
+                </InputSelect>
+                <ValidationMessage For="@(() => createProjectCommand.Stage)" />
+            </div>
+            <div class="text-center">
+                <a class="btn btn-default m-3" @onclick="CloseModal">Отмена</a>
+                <button type="submit" class="btn btn-primary m-3" disabled="@isDisabled">Сохранить и перейти в паспорт нового объекта</button>
+            </div>
+
+            <FluentValidationValidator />
+            <ValidationSummary />
+        </EditForm>
+    }
+</div>
+
+
+@code {
+    private CreateProjectCommand? createProjectCommand = null;
+    private bool isDisabled = false;
+
+    protected override void OnInitialized()
+    {
+        createProjectCommand = new();
+    }
+
+    private async Task SaveDataAsync()
+    {
+        isDisabled = true;
+
+        var result = await _mediator.Send(createProjectCommand!);
+
+        if (result is not null)
+        {
+            _navManager.NavigateTo($"/project-passport/{result.ProjectId}", true);
+        }
+
+        isDisabled = false;
+    }
+
+    private void CloseModal()
+    {
+        _dialogService.Close();
+    }
+}
+
